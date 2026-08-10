@@ -301,9 +301,9 @@ Checkpoint result recorded on 2026-08-10:
 - Confirmed that all eight solver tests pass and the existing Play Mode bottle, cauldron intake, totals, rejection feedback, and world-space status panel continue to work without new Console problems.
 - The runtime assembly asset is currently saved as `WizzardCauldron.Runtime.asmdef`, while its internal assembly name is correctly `WizzardsCauldron.Runtime`; the working asset does not need to be renamed during the next checkpoint.
 
-### Handoff: next implementation session
+### Completed checkpoint: game session and immutable attempt results
 
-**Next objective:** Add the authoritative game-session and immutable attempt-result layer, connect the configured puzzle to the solver and cauldron, and verify finishing and locking through a temporary diagnostic command before adding the wand or result UI.
+**Objective:** Add the authoritative game-session and immutable attempt-result layer, connect the configured puzzle to the solver and cauldron, and verify finishing and locking through a temporary diagnostic command before adding the wand or result UI.
 
 Planned work:
 
@@ -332,6 +332,52 @@ Explicitly deferred until after the game-session checkpoint:
 - The world-space result panel.
 - Cross-object reset coordination and a physical reset control.
 - Potion inspection UI and presentation polish.
+- Final six-potion dataset and balancing.
+
+Checkpoint result recorded on 2026-08-10:
+
+- Added `GameSessionState` with `Playing` and `Finished` states and `AttemptOutcome` with no-selection, valid non-optimal, and optimal outcomes.
+- Implemented immutable `AttemptResult` data containing player health, used and maximum capacity, best possible health, outcome, and a read-only copy of one optimal stable-ID selection.
+- Implemented `GameSessionController` with authoritative `PuzzleDefinition` and `CauldronController` references, one-time puzzle solving during initialization, and read-only access to the optimal solution and latest result.
+- Added the scene-level `GameSession` object to `SCN_InteractionTest`, assigned `SO_PuzzleIntro` and the existing `Cauldron`, and verified the runtime optimum of health `5` using capacity `4`.
+- `TryFinishAttempt` now locks the cauldron, snapshots one result, changes the state to `Finished`, and emits `AttemptFinished` only for the first successful finish request.
+- Added a temporary `Finish Attempt (Play Mode)` context command for diagnostic testing without prematurely coupling the session to the wand or result UI.
+- Added four `AttemptResultTests` for no selection, a valid non-optimal selection, an optimal selection, and the copied optimal stable-ID list. All twelve project-owned Edit Mode tests pass.
+- Verified no-selection, Red-only, and Green-plus-Yellow finish outcomes; repeated finish requests are ignored, and post-finish intake attempts return `GameFinished` without changing totals.
+- Confirmed the existing bottle interactions, cauldron status panel, rejection feedback, and Console remain in working order.
+
+### Handoff: next implementation session
+
+**Next objective:** Add a small world-space result panel that remains hidden while playing, subscribes to `GameSessionController.AttemptFinished`, and presents the immutable `AttemptResult` without adding wand or reset behavior yet.
+
+Planned work:
+
+1. Implement `ResultPanel.cs` under `Assets/WizzardsCauldron/Scripts/UI/` with serialized references to `GameSessionController`, an independently hideable content root, and TextMesh Pro fields for outcome, player health, capacity use, and best possible health.
+2. Subscribe to `AttemptFinished` in `OnEnable` and unsubscribe in `OnDisable`; do not poll in `Update`.
+3. Keep the Canvas and `ResultPanel` component active so event subscriptions work, while hiding only a `ResultContent` child before an attempt finishes.
+4. If the panel is enabled after an attempt already finished, initialize it from `GameSessionController.LatestResult` so it cannot miss the result event.
+5. Map `NoPotionsSelected`, `ValidSolution`, and `OptimalSolution` to concise player-facing headings without recalculating or reclassifying the result.
+6. Add a non-interactive World Space Canvas near the cauldron with a high-contrast background and readable TextMesh Pro fields. Keep it visually separate from `CauldronStatusCanvas` and orient it toward the playable side of the room.
+7. Continue using `Finish Attempt (Play Mode)` to test no-selection, Red-only, and Green-plus-Yellow outcomes; the context command remains temporary until the wand checkpoint.
+
+Acceptance criteria:
+
+- The result content is hidden at the start of every new Play Mode attempt.
+- Finishing with no potion shows `No potions selected`, health `0 / 5`, and capacity `0 / 4`.
+- Finishing after accepting only Red shows `Valid solution`, health `1 / 5`, and capacity `2 / 4`.
+- Finishing after accepting Green and Yellow shows `Optimal solution`, health `5 / 5`, and capacity `4 / 4`.
+- The displayed best score and outcome come directly from `AttemptResult`; the UI does not invoke the solver or inspect potion definitions.
+- Disabling and re-enabling `ResultPanel` after finishing restores the existing result from `LatestResult` without duplicating event subscriptions.
+- The panel is non-interactive, readable in the XR Interaction Simulator, does not obscure the intake, and introduces no new Console errors or warnings.
+- Existing bottle, intake, locking, session, and cauldron-status behavior remains intact.
+
+Explicitly deferred until after the result-panel checkpoint:
+
+- Wand-tip and finish-target interaction.
+- Removing the temporary finish context command.
+- Cross-object reset coordination and a physical reset control.
+- Showing display names for one optimal potion combination.
+- Potion inspection UI, sound, particles, liquid presentation, and final styling.
 - Final six-potion dataset and balancing.
 
 ### Headset-free test workflow
