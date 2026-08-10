@@ -213,9 +213,9 @@ Checkpoint result recorded on 2026-08-07:
 - Verified that accepted potions change to `Used`, rejected too-full potions remain `Available`, and rejected attempts do not alter totals.
 - Existing grab, release, collision, drop, and re-grab behavior remains functional.
 
-### Handoff: next implementation session
+### Completed checkpoint: world-space cauldron status panel
 
-**Next objective:** Replace Console-only cauldron feedback with a small, readable world-space status panel while keeping all puzzle decisions in the existing core controllers.
+**Objective:** Replace Console-only cauldron feedback with a small, readable world-space status panel while keeping all puzzle decisions in the existing core controllers.
 
 Planned work:
 
@@ -247,6 +247,92 @@ Explicitly deferred until after the status-panel checkpoint:
 - Finish-wand interaction, result comparison, and game-session locking.
 - Complete room reset coordination.
 - Automatic optimal-score calculation and final six-potion balancing.
+
+Checkpoint result recorded on 2026-08-10:
+
+- Created `Assets/WizzardsCauldron/Scripts/UI/` and implemented `CauldronStatusPanel` in the `WizzardsCauldron.UI` namespace.
+- The panel subscribes to `CauldronController.TotalsChanged` and `CauldronIntake.PotionProcessed` in `OnEnable`, unsubscribes in `OnDisable`, and performs no per-frame polling.
+- Added the non-interactive `CauldronStatusCanvas` to `SCN_InteractionTest` with separate TextMesh Pro fields for health, remaining/maximum capacity, and the latest processing result.
+- Assigned the saved scene references to the existing `CauldronController`, `CauldronIntake`, `HealthText`, `CapacityText`, and `MessageText` components.
+- The Canvas uses a Y rotation of `180` so the text faces the playable side of the current graybox room; the initial opposite facing direction placed the text on the back-facing side.
+- Verified the initial `Health: 0` and `Capacity: 4 / 4` display, accepted-potion updates, already-used feedback, insufficient-capacity feedback, and initial-state restoration on a new Play Mode attempt.
+- Verified that rejected attempts do not change totals, disabling and re-enabling the panel does not duplicate subscriptions, and no new Console errors or warnings were introduced.
+
+### Completed checkpoint: pure 0/1 knapsack solver
+
+**Objective:** Implement and verify a pure C# 0/1 knapsack solver that calculates the best possible health for a configured capacity before adding finish-session or result-panel behavior.
+
+Planned work:
+
+1. Add a project runtime assembly definition so project-owned runtime code can be referenced by an Edit Mode test assembly without moving gameplay responsibilities.
+2. Implement immutable, Unity-independent solver input and result types carrying stable ID, health, fill, maximum health, used capacity, and one optimal set of stable IDs.
+3. Implement `PuzzleSolver` with a dynamic-programming 0/1 knapsack algorithm. Each item may be selected at most once, and the solver must not read scene objects or mutate potion definitions.
+4. Define deterministic tie behavior: prefer greater health, then lower used capacity, then preserve the earlier discovered selection.
+5. Add Edit Mode tests for the current three-potion technical puzzle, exact fit, an overweight item, empty input, zero capacity, and non-reuse of a single item.
+6. Run all new Edit Mode tests and verify that ordinary Play Mode behavior and the status panel still compile and work after introducing assembly definitions.
+
+Acceptance criteria:
+
+- The solver has no `UnityEngine`, scene-object, XR, or UI dependencies.
+- Red, Green, and Yellow at capacity `4` return maximum health `5`, used capacity `4`, and the Green plus Yellow stable IDs.
+- A single potion can never be counted more than once.
+- Items whose fill exceeds capacity are not selected.
+- Empty input and zero capacity return a zero-valued empty solution.
+- The input collection is not modified.
+- All new Edit Mode tests pass and no new Console errors or warnings are introduced.
+- Entering Play Mode preserves the verified bottle, intake, totals, rejection feedback, and status-panel behavior.
+
+Explicitly deferred until after the solver checkpoint:
+
+- Mapping `PuzzleDefinition` into solver inputs through `GameSessionController`.
+- Finish-wand interaction and attempt locking.
+- Result-panel presentation and optimal/valid outcome comparison.
+- Cross-object reset coordination.
+- Final six-potion dataset and balancing.
+
+Checkpoint result recorded on 2026-08-10:
+
+- Added the project runtime assembly `WizzardsCauldron.Runtime` with its required TextMesh Pro reference, allowing project-owned runtime code to be referenced from a separate Edit Mode test assembly.
+- Implemented immutable `KnapsackItem` input data with stable ID, non-negative health, and positive fill validation.
+- Implemented immutable `PuzzleSolution` result data containing maximum health, used capacity, and a read-only copy of one optimal stable-ID selection.
+- Implemented `PuzzleSolver` as a Unity-independent dynamic-programming 0/1 knapsack solver. Descending capacity traversal prevents any item from being reused in one solution.
+- Deterministic comparison prefers greater health, then lower used capacity, and otherwise preserves the earlier discovered selection.
+- Added `WizzardsCauldron.EditModeTests` and eight Edit Mode tests covering the introductory Green-plus-Yellow optimum, exact fit, overweight rejection, empty input, zero capacity, single-item non-reuse, lower-capacity tie resolution, and input-order preservation.
+- Confirmed that all eight solver tests pass and the existing Play Mode bottle, cauldron intake, totals, rejection feedback, and world-space status panel continue to work without new Console problems.
+- The runtime assembly asset is currently saved as `WizzardCauldron.Runtime.asmdef`, while its internal assembly name is correctly `WizzardsCauldron.Runtime`; the working asset does not need to be renamed during the next checkpoint.
+
+### Handoff: next implementation session
+
+**Next objective:** Add the authoritative game-session and immutable attempt-result layer, connect the configured puzzle to the solver and cauldron, and verify finishing and locking through a temporary diagnostic command before adding the wand or result UI.
+
+Planned work:
+
+1. Define `GameSessionState` values for `Playing` and `Finished`, plus `AttemptOutcome` values for no selection, a valid non-optimal selection, and an optimal solution.
+2. Add immutable `AttemptResult` data containing player health, used and maximum capacity, best possible health, outcome, and one optimal stable-ID selection.
+3. Implement `GameSessionController` with serialized `PuzzleDefinition` and `CauldronController` references.
+4. On session initialization, validate the puzzle, map its potion definitions into immutable `KnapsackItem` values, solve it once, configure the cauldron, and enter the `Playing` state.
+5. Implement a single `TryFinishAttempt` entry point that locks the cauldron, creates the result, changes the session to `Finished`, and emits one `AttemptFinished` event.
+6. Add a temporary Play Mode context-menu command for finishing and diagnostic result output; this is a test adapter, not the final wand interaction.
+7. Add Edit Mode tests for result classification and manually verify no-selection, non-optimal, optimal, repeated-finish, and post-finish potion-rejection behavior.
+
+Acceptance criteria:
+
+- The session solves the current puzzle once at initialization and exposes optimal health `5` and optimal used capacity `4` for `SO_PuzzleIntro`.
+- Finishing with no accepted potion produces `NoPotionsSelected` with player health `0`.
+- Finishing after accepting only Red produces `ValidSolution` with player health `1` and best possible health `5`.
+- Finishing after accepting Green and Yellow produces `OptimalSolution` with player health `5`.
+- Finishing locks the cauldron; later intake attempts return `GameFinished` and do not change totals.
+- Repeated finish requests do not emit another completion event or replace the first result.
+- The solver and result data remain independent from XR and UI code.
+- Existing status-panel and bottle behavior remains functional with no new Console errors or warnings.
+
+Explicitly deferred until after the game-session checkpoint:
+
+- Wand-tip and finish-target interaction.
+- The world-space result panel.
+- Cross-object reset coordination and a physical reset control.
+- Potion inspection UI and presentation polish.
+- Final six-potion dataset and balancing.
 
 ### Headset-free test workflow
 
