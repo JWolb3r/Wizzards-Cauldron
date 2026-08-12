@@ -358,34 +358,45 @@ Checkpoint result recorded on 2026-08-12:
 - Verified late-enable recovery, readable non-interactive world-space presentation, session locking, existing bottle/intake/status behavior, and no new Console errors or warnings.
 - All twelve project-owned Edit Mode tests continue to pass.
 
+### Saved checkpoint awaiting acceptance confirmation: physical wand finishing
+
+Implementation state inspected on 2026-08-12:
+
+- Created the normalized reusable `Assets/WizzardsCauldron/Prefabs/PF_Wand.prefab` with a root Rigidbody, XR Grab Interactable, solid `Visual` capsule collider, and separate `Tip` trigger.
+- The Rigidbody uses mass `0.2`, gravity, interpolation, and Continuous Dynamic collision detection. The XR Grab Interactable uses the solid body collider rather than the tip trigger.
+- Added the minimal `WandTip` marker under `Assets/WizzardsCauldron/Scripts/Interactions/` and assigned it to the prefab's trigger tip.
+- Added `WandActivator` as a thin trigger adapter that accepts only a collider carrying `WandTip`, calls `GameSessionController.TryFinishAttempt`, listens for `AttemptFinished`, and disables the finish trigger after completion.
+- Added the visible `FinishTarget` to `SCN_InteractionTest` at `(0.55, 1.20, 1.05)`, assigned its trigger collider, and wired it to the saved scene `GameSession`.
+- The `PF_Wand` scene instance is saved under `Placeholders` on `WandTable` at `(0.85, 0.91, 0.95)` with Z rotation `90`.
+- The user decided to retain `Finish Attempt (Play Mode)` on `GameSessionController` as an intentional developer diagnostic for possible future use. It is no longer scheduled for removal and is not part of the player-facing interaction loop.
+- Structural inspection found the expected prefab components, collider roles, scene references, and context command. An external `dotnet build` could not complete because the sandbox account cannot write the generated `obj` directory; this was an environment-permission failure rather than a reported C# compiler error.
+- Play Mode acceptance results for the physical wand checkpoint were not explicitly confirmed before this handoff, so the checkpoint is not yet recorded as complete.
+
 ### Handoff: next implementation session
 
-**Next objective:** Replace the temporary finish command with a deliberate physical wand-tip interaction while retaining the existing game-session and result-panel responsibilities.
+**First objective:** Confirm the saved physical wand checkpoint without rebuilding or redesigning it.
 
-Planned work:
+1. Confirm wand grab, release, table/floor collision, drop, and re-grab in the XR Interaction Simulator.
+2. Confirm that bottles, hands, unrelated colliders, and the solid wand body do not activate `FinishTarget`.
+3. Confirm that the marked tip finishes exactly once, locks the cauldron, disables the target trigger, and reveals the correct result.
+4. Confirm no-selection, Red-only, and Green-plus-Yellow results through physical finishing, all twelve Edit Mode tests, and no new Console errors or warnings.
+5. If these checks pass, change this heading to `Completed checkpoint: physical wand finishing` and record the confirmation. Retain the context-menu finish diagnostic by explicit project decision.
 
-1. Convert the existing graybox `Wand` into a normalized reusable `PF_Wand` prefab with a Rigidbody, XR Grab Interactable, solid body collider, and a dedicated child tip trigger.
-2. Add a minimal `WandTip` marker component so only the intended tip collider can activate a finish target; do not use object names or potion-style gameplay data to identify it.
-3. Add a visible `FinishTarget` trigger on the player-facing side of the cauldron, positioned away from `IntakeTrigger` so ordinary potion handling cannot activate it.
-4. Implement `WandActivator` as a thin interaction adapter that ignores unrelated colliders and calls `GameSessionController.TryFinishAttempt` only when a marked wand tip enters the target.
-5. Subscribe the activator to `AttemptFinished` and disable its trigger after completion, including when another test adapter finishes the session first.
-6. Verify grab, release, drop, re-grab, deliberate tip activation, body-collider rejection, non-wand rejection, one-shot completion, cauldron locking, and result-panel display.
-7. After physical finishing is verified, remove the temporary `Finish Attempt (Play Mode)` context-menu method from `GameSessionController`.
+**Next implementation objective after confirmation:** Add cross-object room reset coordination with a developer test adapter before building a physical reset control.
 
-Acceptance criteria:
+Planned reset work:
 
-- The wand can be grabbed, moved, released, dropped onto the table or floor, and grabbed again through the XR Interaction Simulator.
-- The wand's solid body collider continues to participate in physics while its dedicated tip collider is a trigger and is not used as the XR grab volume.
-- Bottles, hands, unrelated colliders, and contact from the wand body do not finish the attempt.
-- A deliberate entry of the marked wand tip into `FinishTarget` finishes the attempt exactly once.
-- Finishing locks the cauldron, disables further finish-target activation, and reveals the already implemented result panel with the correct immutable result.
-- No-selection, Red-only, and Green-plus-Yellow attempts still produce the expected result classifications and values through physical finishing.
-- The temporary context-menu finish command is removed after physical verification.
-- All twelve project-owned Edit Mode tests continue to pass, and Play Mode introduces no new Console errors or warnings.
+1. Add an authoritative session-reset entry point and reset event to `GameSessionController` while reusing the already calculated optimal solution.
+2. Reset `LatestResult`, return the session to `Playing`, and reset the existing cauldron without reloading the scene.
+3. Add a small reusable physics-reset component that records each bottle or wand's initial transform, restores it safely, and clears Rigidbody velocity and angular velocity.
+4. Add a scene-level reset coordinator with explicit serialized references to the three potion controllers, the bottle physics-reset components, the wand physics-reset component, and `GameSessionController`.
+5. Update `ResultPanel` to hide on the session-reset event and `WandActivator` to re-enable `FinishTarget` after reset. Continue using `CauldronController.TotalsChanged` for the existing status panel.
+6. Add a temporary `Reset Room (Play Mode)` context-menu action for testing. A player-facing reset rune, lever, or button remains a separate later checkpoint.
+7. Verify reset during play and after finishing, exact object pose restoration, cleared physics motion, available potion states, zero cauldron totals, hidden results, re-enabled finishing, and multiple attempts without scene reload.
 
-Explicitly deferred until after the wand checkpoint:
+Explicitly deferred until after reset coordination:
 
-- Cross-object reset coordination and a physical reset control.
+- Physical reset control and accidental-reset protection.
 - Custom wand grab poses, haptics, sound, particles, target animation, and final wand/target art.
 - Showing display names for one optimal potion combination.
 - Potion inspection UI and cauldron-liquid presentation.
