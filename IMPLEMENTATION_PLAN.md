@@ -346,38 +346,49 @@ Checkpoint result recorded on 2026-08-10:
 - Verified no-selection, Red-only, and Green-plus-Yellow finish outcomes; repeated finish requests are ignored, and post-finish intake attempts return `GameFinished` without changing totals.
 - Confirmed the existing bottle interactions, cauldron status panel, rejection feedback, and Console remain in working order.
 
+### Completed checkpoint: world-space attempt result panel
+
+Checkpoint result recorded on 2026-08-12:
+
+- Implemented `Assets/WizzardsCauldron/Scripts/UI/ResultPanel.cs` as an event-driven presentation adapter for `GameSessionController.AttemptFinished` and `LatestResult`.
+- Added the active `ResultCanvas` and independently hideable `ResultContent` hierarchy to `SCN_InteractionTest`, with saved references for the outcome, health, capacity, and best-health TextMesh Pro fields.
+- The content begins inactive, becomes visible only when an immutable `AttemptResult` is available, and restores a previously completed result after the panel is disabled and re-enabled.
+- The UI maps the three existing `AttemptOutcome` values to player-facing headings and reads all numbers directly from `AttemptResult`; it does not invoke the solver or inspect potion definitions.
+- Verified no-selection, Red-only, and Green-plus-Yellow displays with the expected `0 / 5`, `1 / 5`, and `5 / 5` health results and matching capacity values.
+- Verified late-enable recovery, readable non-interactive world-space presentation, session locking, existing bottle/intake/status behavior, and no new Console errors or warnings.
+- All twelve project-owned Edit Mode tests continue to pass.
+
 ### Handoff: next implementation session
 
-**Next objective:** Add a small world-space result panel that remains hidden while playing, subscribes to `GameSessionController.AttemptFinished`, and presents the immutable `AttemptResult` without adding wand or reset behavior yet.
+**Next objective:** Replace the temporary finish command with a deliberate physical wand-tip interaction while retaining the existing game-session and result-panel responsibilities.
 
 Planned work:
 
-1. Implement `ResultPanel.cs` under `Assets/WizzardsCauldron/Scripts/UI/` with serialized references to `GameSessionController`, an independently hideable content root, and TextMesh Pro fields for outcome, player health, capacity use, and best possible health.
-2. Subscribe to `AttemptFinished` in `OnEnable` and unsubscribe in `OnDisable`; do not poll in `Update`.
-3. Keep the Canvas and `ResultPanel` component active so event subscriptions work, while hiding only a `ResultContent` child before an attempt finishes.
-4. If the panel is enabled after an attempt already finished, initialize it from `GameSessionController.LatestResult` so it cannot miss the result event.
-5. Map `NoPotionsSelected`, `ValidSolution`, and `OptimalSolution` to concise player-facing headings without recalculating or reclassifying the result.
-6. Add a non-interactive World Space Canvas near the cauldron with a high-contrast background and readable TextMesh Pro fields. Keep it visually separate from `CauldronStatusCanvas` and orient it toward the playable side of the room.
-7. Continue using `Finish Attempt (Play Mode)` to test no-selection, Red-only, and Green-plus-Yellow outcomes; the context command remains temporary until the wand checkpoint.
+1. Convert the existing graybox `Wand` into a normalized reusable `PF_Wand` prefab with a Rigidbody, XR Grab Interactable, solid body collider, and a dedicated child tip trigger.
+2. Add a minimal `WandTip` marker component so only the intended tip collider can activate a finish target; do not use object names or potion-style gameplay data to identify it.
+3. Add a visible `FinishTarget` trigger on the player-facing side of the cauldron, positioned away from `IntakeTrigger` so ordinary potion handling cannot activate it.
+4. Implement `WandActivator` as a thin interaction adapter that ignores unrelated colliders and calls `GameSessionController.TryFinishAttempt` only when a marked wand tip enters the target.
+5. Subscribe the activator to `AttemptFinished` and disable its trigger after completion, including when another test adapter finishes the session first.
+6. Verify grab, release, drop, re-grab, deliberate tip activation, body-collider rejection, non-wand rejection, one-shot completion, cauldron locking, and result-panel display.
+7. After physical finishing is verified, remove the temporary `Finish Attempt (Play Mode)` context-menu method from `GameSessionController`.
 
 Acceptance criteria:
 
-- The result content is hidden at the start of every new Play Mode attempt.
-- Finishing with no potion shows `No potions selected`, health `0 / 5`, and capacity `0 / 4`.
-- Finishing after accepting only Red shows `Valid solution`, health `1 / 5`, and capacity `2 / 4`.
-- Finishing after accepting Green and Yellow shows `Optimal solution`, health `5 / 5`, and capacity `4 / 4`.
-- The displayed best score and outcome come directly from `AttemptResult`; the UI does not invoke the solver or inspect potion definitions.
-- Disabling and re-enabling `ResultPanel` after finishing restores the existing result from `LatestResult` without duplicating event subscriptions.
-- The panel is non-interactive, readable in the XR Interaction Simulator, does not obscure the intake, and introduces no new Console errors or warnings.
-- Existing bottle, intake, locking, session, and cauldron-status behavior remains intact.
+- The wand can be grabbed, moved, released, dropped onto the table or floor, and grabbed again through the XR Interaction Simulator.
+- The wand's solid body collider continues to participate in physics while its dedicated tip collider is a trigger and is not used as the XR grab volume.
+- Bottles, hands, unrelated colliders, and contact from the wand body do not finish the attempt.
+- A deliberate entry of the marked wand tip into `FinishTarget` finishes the attempt exactly once.
+- Finishing locks the cauldron, disables further finish-target activation, and reveals the already implemented result panel with the correct immutable result.
+- No-selection, Red-only, and Green-plus-Yellow attempts still produce the expected result classifications and values through physical finishing.
+- The temporary context-menu finish command is removed after physical verification.
+- All twelve project-owned Edit Mode tests continue to pass, and Play Mode introduces no new Console errors or warnings.
 
-Explicitly deferred until after the result-panel checkpoint:
+Explicitly deferred until after the wand checkpoint:
 
-- Wand-tip and finish-target interaction.
-- Removing the temporary finish context command.
 - Cross-object reset coordination and a physical reset control.
+- Custom wand grab poses, haptics, sound, particles, target animation, and final wand/target art.
 - Showing display names for one optimal potion combination.
-- Potion inspection UI, sound, particles, liquid presentation, and final styling.
+- Potion inspection UI and cauldron-liquid presentation.
 - Final six-potion dataset and balancing.
 
 ### Headset-free test workflow
