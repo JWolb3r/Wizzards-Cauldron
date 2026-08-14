@@ -122,6 +122,7 @@ GameObject:
   - component: {fileID: 6037816523640019529}
   - component: {fileID: 2192584335456491516}
   - component: {fileID: 5585556099877788217}
+  - component: {fileID: 3429240654758112611}
   m_Layer: 0
   m_Name: PF_PotionBottle
   m_TagString: Untagged
@@ -316,3 +317,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _definition: {fileID: 0}
   _state: 0
+--- !u!114 &3429240654758112611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1789535836336226910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5c68a5acdd4e4345a9a7635b2e8ffa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _interactionBehaviour: {fileID: 2192584335456491516}

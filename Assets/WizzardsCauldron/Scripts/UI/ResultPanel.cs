@@ -52,6 +52,9 @@ namespace WizzardsCauldron.UI
             _gameSession.AttemptFinished +=
                 HandleAttemptFinished;
 
+            _gameSession.SessionReset +=
+                HandleSessionReset;
+
             RefreshFromSession();
         }
 
@@ -61,6 +64,9 @@ namespace WizzardsCauldron.UI
             {
                 _gameSession.AttemptFinished -=
                     HandleAttemptFinished;
+
+                _gameSession.SessionReset -=
+                    HandleSessionReset;
             }
         }
 
@@ -82,6 +88,11 @@ namespace WizzardsCauldron.UI
             AttemptResult result)
         {
             ShowResult(result);
+        }
+
+        private void HandleSessionReset()
+        {
+            HideResult();
         }
 
         private void ShowResult(

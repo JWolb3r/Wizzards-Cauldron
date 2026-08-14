@@ -79,9 +79,14 @@ namespace WizzardsCauldron.Interactions
             }
         }
 
-        private void OnDisable()
+        public void ResetTracking()
         {
             _potionsInside.Clear();
+        }
+
+        private void OnDisable()
+        {
+            ResetTracking();
         }
 
         private void LogResult(

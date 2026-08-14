@@ -7,6 +7,8 @@ namespace WizzardsCauldron.UI
 {
     public sealed class CauldronStatusPanel : MonoBehaviour
     {
+        [SerializeField] private GameSessionController _gameSession;
+
         [Header("Gameplay Sources")]
         [SerializeField] private CauldronController _cauldron;
         [SerializeField] private CauldronIntake _intake;
@@ -30,6 +32,7 @@ namespace WizzardsCauldron.UI
 
             _cauldron.TotalsChanged += RefreshTotals;
             _intake.PotionProcessed += HandlePotionProcessed;
+            _gameSession.SessionReset += HandleSessionReset;
 
             RefreshTotals();
             _messageText.text = "Add a potion";
@@ -45,6 +48,10 @@ namespace WizzardsCauldron.UI
             if (_intake != null)
             {
                 _intake.PotionProcessed -= HandlePotionProcessed;
+            }
+            if (_gameSession != null)
+            {
+                _gameSession.SessionReset -= HandleSessionReset;
             }
         }
 
@@ -105,6 +112,12 @@ namespace WizzardsCauldron.UI
             }
         }
 
+        private void HandleSessionReset()
+        {
+            RefreshTotals();
+            _messageText.text = "Add a potion";
+        }
+
         private bool HasRequiredReferences()
         {
             return
@@ -112,6 +125,7 @@ namespace WizzardsCauldron.UI
                 _intake != null &&
                 _healthText != null &&
                 _capacityText != null &&
+                _gameSession != null &&
                 _messageText != null;
         }
 

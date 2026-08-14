@@ -40,6 +40,8 @@ namespace WizzardsCauldron.Core
         public event Action<AttemptResult>
             AttemptFinished;
 
+        public event Action SessionReset;
+
         private void Awake()
         {
             InitializeSession();
@@ -68,6 +70,23 @@ namespace WizzardsCauldron.Core
             _state = GameSessionState.Finished;
 
             AttemptFinished?.Invoke(result);
+            return true;
+        }
+
+        public bool TryResetSession()
+        {
+            if (_optimalSolution == null ||
+                _cauldron == null)
+            {
+                return false;
+            }
+
+            _latestResult = null;
+            _state = GameSessionState.Playing;
+
+            _cauldron.ResetCauldron();
+
+            SessionReset?.Invoke();
             return true;
         }
 

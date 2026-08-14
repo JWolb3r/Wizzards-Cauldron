@@ -45,6 +45,9 @@ namespace WizzardsCauldron.Interactions
             _gameSession.AttemptFinished +=
                 HandleAttemptFinished;
 
+            _gameSession.SessionReset +=
+                HandleSessionReset;
+
             SetTargetEnabled(_gameSession.IsPlaying);
         }
 
@@ -54,6 +57,9 @@ namespace WizzardsCauldron.Interactions
             {
                 _gameSession.AttemptFinished -=
                     HandleAttemptFinished;
+
+                _gameSession.SessionReset -=
+                    HandleSessionReset;
             }
         }
 
@@ -84,6 +90,11 @@ namespace WizzardsCauldron.Interactions
             AttemptResult _)
         {
             SetTargetEnabled(false);
+        }
+
+        private void HandleSessionReset()
+        {
+            SetTargetEnabled(_gameSession.IsPlaying);
         }
 
         private void SetTargetEnabled(

@@ -77,6 +77,7 @@ GameObject:
   - component: {fileID: 6083035238706120375}
   - component: {fileID: 7670504659317848403}
   - component: {fileID: 8374882837482457375}
+  - component: {fileID: 4743994237244617853}
   m_Layer: 0
   m_Name: PF_Wand
   m_TagString: Untagged
@@ -258,6 +259,19 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &4743994237244617853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5807576029110184535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5c68a5acdd4e4345a9a7635b2e8ffa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _interactionBehaviour: {fileID: 8374882837482457375}
 --- !u!1 &7058031123480088677
 GameObject:
   m_ObjectHideFlags: 0
