@@ -377,26 +377,80 @@ Checkpoint result recorded on 2026-08-14:
 - Confirmed that potion intake after finishing is rejected without changing totals, all twelve project-owned Edit Mode tests pass, and no new Console errors or warnings were introduced.
 - The physical wand-finishing checkpoint is complete. Retain `Finish Attempt (Play Mode)` as an intentional developer diagnostic.
 
-### Handoff: next implementation session
+### Completed checkpoint: cross-object room reset coordination
 
-**Next implementation objective:** Add cross-object room reset coordination with a developer test adapter before building a physical reset control.
+Checkpoint result recorded on 2026-08-14:
 
-Planned reset work:
+- Added `GameSessionController.TryResetSession` and the `SessionReset` event. Reset clears `LatestResult`, returns the existing solved session to `Playing`, resets and unlocks the cauldron, and does not rerun the solver or reload the scene.
+- Added reusable `PhysicsResettable` behavior that records the initial parent, local transform, scale, and Rigidbody kinematic state; safely releases an assigned interaction behavior; restores the starting pose; and clears linear and angular velocity.
+- Added `PhysicsResettable` to `PF_PotionBottle` and `PF_Wand`, with their root XR Grab Interactable components assigned as the optional interaction behaviors.
+- Added `RoomResetCoordinator` under `Assets/WizzardsCauldron/Scripts/Interactions/` and normalized the source filename to match its MonoBehaviour class while preserving the Unity meta GUID and saved scene reference.
+- Added the scene-level `RoomReset` object to `SCN_InteractionTest`, with explicit references to `GameSession`, `CauldronIntake`, all three potion controllers, all three bottle reset components, and the wand reset component.
+- Added explicit cauldron-intake debounce clearing so a bottle teleported home during reset can be accepted again in the following attempt.
+- Updated `ResultPanel` to hide, `WandActivator` to re-enable `FinishTarget`, and `CauldronStatusPanel` to restore `Add a potion` when `SessionReset` is emitted.
+- Retained `Reset Room (Play Mode)` on `RoomResetCoordinator` as the developer test adapter for reset diagnostics.
+- Confirmed reset during play and after finishing, exact bottle and wand pose restoration, cleared physics motion, available potion states, zero cauldron totals, hidden results, re-enabled finishing, repeated intake of previously used bottles, and multiple complete attempts without a scene reload.
+- Confirmed reset while objects are moving or held, all twelve project-owned Edit Mode tests, and no new Console errors or warnings.
 
-1. Add an authoritative session-reset entry point and reset event to `GameSessionController` while reusing the already calculated optimal solution.
-2. Reset `LatestResult`, return the session to `Playing`, and reset the existing cauldron without reloading the scene.
-3. Add a small reusable physics-reset component that records each bottle or wand's initial transform, restores it safely, and clears Rigidbody velocity and angular velocity.
-4. Add a scene-level reset coordinator with explicit serialized references to the three potion controllers, the bottle physics-reset components, the wand physics-reset component, `CauldronIntake`, and `GameSessionController`. Explicitly clear the intake's in-volume debounce tracking so teleporting bottles home cannot suppress their next entry.
-5. Update `ResultPanel` to hide on the session-reset event, `WandActivator` to re-enable `FinishTarget`, and `CauldronStatusPanel` to restore its initial `Add a potion` message. Continue using `CauldronController.TotalsChanged` for status totals.
-6. Add a temporary `Reset Room (Play Mode)` context-menu action for testing. A player-facing reset rune, lever, or button remains a separate later checkpoint.
-7. Verify reset during play and after finishing, exact object pose restoration, cleared physics motion, available potion states, zero cauldron totals, hidden results, re-enabled finishing, and multiple attempts without scene reload.
+### Completed checkpoint: deliberate physical reset control
 
-Explicitly deferred until after reset coordination:
+Checkpoint result recorded on 2026-08-15:
 
-- Physical reset control and accidental-reset protection.
-- Custom wand grab poses, haptics, sound, particles, target animation, and final wand/target art.
+- Imported `Assets/WizzardsCauldron/Models/reset_button_1.fbx` and used it as the presentation mesh for the project-owned `PF_ResetControl` prefab without adding gameplay behavior to the source model.
+- Created `PF_ResetControl` with a separate interaction collider, XR Simple Interactable, world-space status text, and `ResetHoldControl` presentation adapter.
+- `ResetHoldControl` requires a one-second continuous hold, reports percentage progress, cancels cleanly on early release, blocks repeated resets until selection is released, and delegates the actual reset exclusively to `RoomResetCoordinator.TryResetRoom`.
+- Saved the `ResetControl` prefab instance under `Placeholders` in `SCN_InteractionTest` and retained its intentional scene override referencing the existing `RoomResetCoordinator`.
+- Corrected the prefab event wiring so XR Simple Interactable `Select Entered` invokes `BeginHold` and `Select Exited` invokes `CancelHold`.
+- Confirmed controller interaction, early-release cancellation, successful reset during play and after finishing, one reset per continuous hold, return to idle feedback on release, and continued operation of the developer context-menu reset adapter.
+- Confirmed that reset continues to restore potion and wand poses, potion availability, zero cauldron totals, the initial status prompt, hidden result content, and an enabled finish target without reloading the scene.
+
+### Completed checkpoint: ordinary-hover potion inspection
+
+Checkpoint result recorded on 2026-08-15:
+
+- Added reusable `PotionInspectionSource` to `PF_PotionBottle`, reading identity and values exclusively through the existing `PotionController` and assigned `PotionDefinition`.
+- Wired XR Grab Interactable `First Hover Entered` to `BeginInspection` and `Last Hover Exited` to `EndInspection`, avoiding premature hide behavior when multiple interactors hover one bottle.
+- Added the active scene-level `PotionInspectionCanvas` with independently hideable `InspectionContent` and dedicated name, health, and fill TextMesh Pro fields.
+- Implemented `PotionInspectionPanel` as an event-driven presentation adapter subscribed to the Red, Green, and Yellow scene sources.
+- The panel displays the most recently hovered source and falls back to another still-hovered potion when a second interactor leaves; it hides when no source remains hovered.
+- Confirmed Red, Green, and Yellow display their definition-owned names and the expected `1/2`, `2/2`, and `3/2` health/fill values.
+- Confirmed ray hover without selection, direct hover, stable transitions, two-controller fallback, unchanged grab/release behavior, reset compatibility, readable placement, all twelve Edit Mode tests, and no new Console errors or warnings.
+- Wand-only inspection remains optional; ordinary hover is the required discoverable baseline.
+
+### Completed checkpoint: capacity-driven cauldron liquid display
+
+Checkpoint result recorded on 2026-08-15:
+
+- Created the opaque emissive `Assets/WizzardsCauldron/Materials/MAT_CauldronLiquid.mat` placeholder material.
+- Added the collider-free `LiquidVisual` cylinder under the scene `Cauldron`, initially inactive with local scale `(0.8, 0.01, 0.8)`.
+- Created `Assets/WizzardsCauldron/Scripts/Presentation/` and implemented `CauldronLiquidDisplay` as an event-driven presentation component subscribed to `CauldronController.TotalsChanged`.
+- The display reads authoritative used and maximum capacity, hides at zero, maps the fill ratio to configured local height, and keeps the cylinder's lower edge fixed. It never changes totals, potion state, session state, or intake decisions.
+- Confirmed no liquid at zero capacity, half-full presentation after one current two-fill potion, and full presentation after two accepted potions.
+- Confirmed duplicate, too-full, and post-finish rejections leave the liquid unchanged; physical reset hides it; and the next attempt fills it normally.
+- Confirmed the liquid behavior works without new gameplay or reset regressions and remains suitable for handoff.
+- Known presentation limitation: the current cauldron is an opaque solid capsule rather than a hollow final model, so the temporary purple cylinder visibly protrudes from the placeholder. This is accepted graybox behavior, not the intended final appearance.
+- Future art integration should replace or reshape only the cauldron visual and liquid presentation geometry/material, then retune `_bottomLocalY`, `_emptyScaleY`, and `_fullScaleY`; it must preserve `CauldronController`, `IntakeTrigger`, `CauldronLiquidDisplay`, and their existing references and responsibilities.
+
+### Handoff: next implementation owner
+
+**Next objective:** Integrate the final or improved cauldron presentation and add lightweight acceptance/rejection effects without changing the verified gameplay loop.
+
+Handoff requirements:
+
+1. Replace the graybox capsule appearance through child visual geometry or a project-owned cauldron prefab; do not remove or relocate the authoritative `CauldronController` without updating and retesting every saved reference.
+2. Preserve a non-trigger physical collider for the cauldron body and the separate `IntakeTrigger` trigger used by `CauldronIntake`.
+3. Fit the existing `LiquidVisual` or a replacement collider-free liquid mesh to the visible basin and retune only `CauldronLiquidDisplay` presentation values.
+4. Keep liquid state driven by `CauldronController.TotalsChanged` so rejected attempts and reset remain correct automatically.
+5. If adding splash particles or audio, implement a thin presentation listener for `CauldronIntake.PotionProcessed`; accepted and rejected effects must remain result-specific and must not mutate gameplay state.
+6. Re-run half/full/rejection/finish/reset checks, the full interaction loop, and all twelve Edit Mode tests after replacing visuals.
+
+Explicitly deferred:
+
+- Fluid simulation, pouring streams, dynamic ripples, and complex transparent shaders.
+- Mandatory color mixing or per-potion liquid blending.
+- Empty-bottle or hidden-content presentation after acceptance.
+- Final UI, reset-control, wand, and finish-target art.
 - Showing display names for one optimal potion combination.
-- Potion inspection UI and cauldron-liquid presentation.
 - Final six-potion dataset and balancing.
 
 ### Headset-free test workflow

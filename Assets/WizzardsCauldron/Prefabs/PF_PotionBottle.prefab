@@ -123,6 +123,7 @@ GameObject:
   - component: {fileID: 2192584335456491516}
   - component: {fileID: 5585556099877788217}
   - component: {fileID: 3429240654758112611}
+  - component: {fileID: 634062971604744231}
   m_Layer: 0
   m_Name: PF_PotionBottle
   m_TagString: Untagged
@@ -203,10 +204,36 @@ MonoBehaviour:
   m_AllowGazeAssistance: 0
   m_FirstHoverEntered:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 634062971604744231}
+        m_TargetAssemblyTypeName: WizzardsCauldron.Interactions.PotionInspectionSource,
+          WizzardsCauldron.Runtime
+        m_MethodName: BeginInspection
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_LastHoverExited:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 634062971604744231}
+        m_TargetAssemblyTypeName: WizzardsCauldron.Interactions.PotionInspectionSource,
+          WizzardsCauldron.Runtime
+        m_MethodName: EndInspection
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_HoverEntered:
     m_PersistentCalls:
       m_Calls: []
@@ -330,3 +357,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactionBehaviour: {fileID: 2192584335456491516}
+--- !u!114 &634062971604744231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1789535836336226910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2050b66d35c9b047948ced338d81f98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _potion: {fileID: 5585556099877788217}
