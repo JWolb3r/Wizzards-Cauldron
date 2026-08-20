@@ -298,7 +298,7 @@ namespace WizzardsCauldron.EditorTools
 
             CreateCube(
                 parent,
-                "OpenRoofBeamBack",
+                "RearCeilingBeam",
                 new Vector3(0f, 2.78f, 2.15f),
                 new Vector3(3.52f, 0.13f, 0.17f),
                 assets.WarmWood,
@@ -326,6 +326,8 @@ namespace WizzardsCauldron.EditorTools
                 assets.StoneTrim,
                 true);
 
+            BuildCofferedCeiling(parent, assets);
+
             CreateMeshVisual(
                 parent,
                 "FloorAlchemyRing",
@@ -335,6 +337,73 @@ namespace WizzardsCauldron.EditorTools
                 Quaternion.Euler(90f, 0f, 0f),
                 new Vector3(0.62f, 0.62f, 0.62f),
                 false,
+                false);
+        }
+
+        private static void BuildCofferedCeiling(
+            Transform parent,
+            VisualPassAssets assets)
+        {
+            GameObject ceiling = CreateCube(
+                parent,
+                "CofferedCeilingStone",
+                new Vector3(0f, 3.04f, 1f),
+                new Vector3(4.08f, 0.1f, 4.08f),
+                assets.DarkStone,
+                true);
+            DisableShadowsRecursively(ceiling);
+
+            float[] crossBeamPositions =
+            {
+                -0.45f,
+                0.45f,
+                1.55f,
+                2.45f
+            };
+            for (int index = 0;
+                 index < crossBeamPositions.Length;
+                 index++)
+            {
+                GameObject beam = CreateCube(
+                    parent,
+                    "CeilingCrossBeam_" + (index + 1),
+                    new Vector3(
+                        0f,
+                        2.925f,
+                        crossBeamPositions[index]),
+                    new Vector3(3.82f, 0.13f, 0.12f),
+                    assets.WarmWood,
+                    true);
+                DisableShadowsRecursively(beam);
+            }
+
+            float[] lengthBeamPositions = { -1.25f, 1.25f };
+            for (int index = 0;
+                 index < lengthBeamPositions.Length;
+                 index++)
+            {
+                GameObject beam = CreateCube(
+                    parent,
+                    "CeilingLengthBeam_" + (index + 1),
+                    new Vector3(
+                        lengthBeamPositions[index],
+                        2.925f,
+                        1f),
+                    new Vector3(0.12f, 0.13f, 3.82f),
+                    assets.WarmWood,
+                    true);
+                DisableShadowsRecursively(beam);
+            }
+
+            CreateMeshVisual(
+                parent,
+                "CeilingAstralRune",
+                assets.RuneRingMesh,
+                assets.VioletEmission,
+                new Vector3(0f, 2.984f, 1f),
+                Quaternion.Euler(90f, 0f, 0f),
+                new Vector3(0.34f, 0.34f, 0.34f),
+                true,
                 false);
         }
 
@@ -423,6 +492,16 @@ namespace WizzardsCauldron.EditorTools
                 furnitureVisual,
                 new Vector3(0.05f, 0f, 1f),
                 0.1f);
+            // The Alex combination mesh is a single renderer: its tall open
+            // rails cannot be hidden individually and protrude through the
+            // collider-matched project worktops. Retain the wrapper and source
+            // reference for replacement, but hide only its renderers. The
+            // project-owned stepped workbench below supplies the visible table.
+            foreach (Renderer renderer in furnitureVisual
+                .GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = false;
+            }
 
             DisableRenderersUnderNamedVisual(
                 references.ResetRoot.transform);
@@ -554,6 +633,7 @@ namespace WizzardsCauldron.EditorTools
                 true);
 
             BuildReadableFurnitureSilhouette(parent, assets);
+            BuildPotionSampleTray(parent, assets);
 
             CreateBook(
                 BookNecromancyPath,
@@ -687,9 +767,38 @@ namespace WizzardsCauldron.EditorTools
             CreateCube(
                 parent,
                 "WandWorktableTop",
-                new Vector3(0.85f, 0.8f, 0.95f),
-                new Vector3(0.72f, 0.09f, 0.48f),
+                new Vector3(0.84f, 0.8f, 1.01f),
+                new Vector3(0.76f, 0.09f, 0.62f),
                 assets.WarmWood,
+                true);
+
+            CreateCube(
+                parent,
+                "CentralAlchemyWorktopLeft",
+                new Vector3(-0.38f, 0.8f, 1.01f),
+                new Vector3(0.64f, 0.09f, 0.62f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "CentralAlchemyWorktopBridge",
+                new Vector3(0.2f, 0.8f, 0.745f),
+                new Vector3(0.52f, 0.09f, 0.09f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "ClosedWorkbenchApron",
+                new Vector3(0.05f, 0.67f, 0.7f),
+                new Vector3(2.36f, 0.22f, 0.06f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "ClosedWorkbenchApronTrim",
+                new Vector3(0.05f, 0.792f, 0.665f),
+                new Vector3(2.4f, 0.025f, 0.025f),
+                assets.Gold,
                 true);
 
             Vector3[] tableLegs =
@@ -745,6 +854,138 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(0.2f, 0.69f, 1.05f),
                 new Vector3(0.5f, 0.025f, 0.5f),
                 assets.Gold,
+                true);
+        }
+
+        private static void BuildPotionSampleTray(
+            Transform parent,
+            VisualPassAssets assets)
+        {
+            CreateCube(
+                parent,
+                "PotionSamplerTableExtension",
+                new Vector3(-1.49f, 1f, 1f),
+                new Vector3(0.62f, 0.09f, 0.42f),
+                assets.WarmWood,
+                true);
+
+            Vector3[] extensionLegs =
+            {
+                new Vector3(-1.72f, 0.53f, 0.86f),
+                new Vector3(-1.72f, 0.53f, 1.14f),
+                new Vector3(-1.27f, 0.53f, 0.86f),
+                new Vector3(-1.27f, 0.53f, 1.14f)
+            };
+            for (int index = 0; index < extensionLegs.Length; index++)
+            {
+                CreateCube(
+                    parent,
+                    "PotionSamplerTableLeg_" + (index + 1),
+                    extensionLegs[index],
+                    new Vector3(0.06f, 0.85f, 0.06f),
+                    assets.WarmWood,
+                    true);
+            }
+
+            CreateCube(
+                parent,
+                "PotionSamplerTrayBase",
+                new Vector3(-1.49f, 1.06f, 1f),
+                new Vector3(0.54f, 0.025f, 0.34f),
+                assets.BlackIron,
+                true);
+            CreateCube(
+                parent,
+                "PotionSamplerTrayFrontRim",
+                new Vector3(-1.49f, 1.082f, 0.84f),
+                new Vector3(0.55f, 0.025f, 0.018f),
+                assets.Gold,
+                true);
+            CreateCube(
+                parent,
+                "PotionSamplerTrayBackRim",
+                new Vector3(-1.49f, 1.082f, 1.16f),
+                new Vector3(0.55f, 0.025f, 0.018f),
+                assets.Gold,
+                true);
+
+            CreateDecorativePotionVariant(
+                assets.PotionWrapperPrefab,
+                parent,
+                "PotionSample_LifeDominant",
+                assets.GlassRed,
+                assets.OrangeEmission,
+                assets,
+                new Vector3(-1.68f, 1.09f, 1.02f));
+            CreateDecorativePotionVariant(
+                assets.PotionWrapperPrefab,
+                parent,
+                "PotionSample_LifePoisonBalanced",
+                assets.GlassViolet,
+                assets.CyanEmission,
+                assets,
+                new Vector3(-1.49f, 1.09f, 1.02f));
+            CreateDecorativePotionVariant(
+                assets.PotionWrapperPrefab,
+                parent,
+                "PotionSample_PoisonDominant",
+                assets.GlassGreen,
+                assets.VioletEmission,
+                assets,
+                new Vector3(-1.3f, 1.09f, 1.02f));
+
+            CreatePotionRatioMarker(
+                parent,
+                "LifeDominantRatio",
+                new Vector3(-1.68f, 1.082f, 0.865f),
+                0.052f,
+                0.018f,
+                assets);
+            CreatePotionRatioMarker(
+                parent,
+                "BalancedRatio",
+                new Vector3(-1.49f, 1.082f, 0.865f),
+                0.035f,
+                0.035f,
+                assets);
+            CreatePotionRatioMarker(
+                parent,
+                "PoisonDominantRatio",
+                new Vector3(-1.3f, 1.082f, 0.865f),
+                0.018f,
+                0.052f,
+                assets);
+        }
+
+        private static void CreatePotionRatioMarker(
+            Transform parent,
+            string name,
+            Vector3 center,
+            float lifeWidth,
+            float poisonWidth,
+            VisualPassAssets assets)
+        {
+            const float gap = 0.008f;
+            float totalWidth = lifeWidth + poisonWidth + gap;
+            CreateCube(
+                parent,
+                name + "_Life",
+                center + new Vector3(
+                    -totalWidth * 0.5f + lifeWidth * 0.5f,
+                    0f,
+                    0f),
+                new Vector3(lifeWidth, 0.006f, 0.028f),
+                assets.OrangeEmission,
+                true);
+            CreateCube(
+                parent,
+                name + "_Poison",
+                center + new Vector3(
+                    totalWidth * 0.5f - poisonWidth * 0.5f,
+                    0f,
+                    0f),
+                new Vector3(poisonWidth, 0.006f, 0.028f),
+                assets.VioletEmission,
                 true);
         }
 
@@ -1180,6 +1421,26 @@ namespace WizzardsCauldron.EditorTools
             SetStaticRecursively(bottle);
         }
 
+        private static void CreateDecorativePotionVariant(
+            GameObject prefab,
+            Transform parent,
+            string name,
+            Material glassMaterial,
+            Material labelMaterial,
+            VisualPassAssets assets,
+            Vector3 bottomCenter)
+        {
+            GameObject bottle = InstantiateWrapper(prefab, parent, name);
+            AssignMaterialSequence(
+                bottle,
+                glassMaterial,
+                assets.Cork,
+                labelMaterial);
+            FitToMaximumDimension(bottle, 0.18f);
+            PlaceBottomAndCenter(bottle, bottomCenter, bottomCenter.y);
+            SetStaticRecursively(bottle);
+        }
+
         private static ParticleSystem CreateBurstParticles(
             Transform parent,
             string name,
@@ -1417,6 +1678,21 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return cube;
+        }
+
+        private static void DisableShadowsRecursively(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in root
+                .GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
         }
 
         private static GameObject CreatePrimitiveVisualLocal(

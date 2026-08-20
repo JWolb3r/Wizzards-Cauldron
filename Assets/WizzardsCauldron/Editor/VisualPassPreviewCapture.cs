@@ -40,7 +40,17 @@ namespace WizzardsCauldron.EditorTools
                 "04_BackCorner.png",
                 new Vector3(1.55f, 1.62f, 2.55f),
                 new Vector3(-0.05f, 1.1f, 1.05f),
-                64f)
+                64f),
+            new PreviewView(
+                "05_PotionSampler.png",
+                new Vector3(-0.35f, 1.46f, 0.16f),
+                new Vector3(-1.43f, 1.08f, 1f),
+                52f),
+            new PreviewView(
+                "06_CofferedCeiling.png",
+                new Vector3(0f, 1.38f, 0.15f),
+                new Vector3(0f, 2.86f, 1f),
+                68f)
         };
 
         [MenuItem(
@@ -78,7 +88,7 @@ namespace WizzardsCauldron.EditorTools
             {
                 EditorUtility.DisplayDialog(
                     "Wizzards Cauldron",
-                    "Four visual-pass previews were written to " +
+                    "Six visual-pass previews were written to " +
                     OutputFolder + ".",
                     "OK");
             }
