@@ -281,8 +281,6 @@ namespace WizzardsCauldron.EditorTools
 
             Vector3[] columnPositions =
             {
-                new Vector3(-1.84f, 1.5f, -0.84f),
-                new Vector3(1.84f, 1.5f, -0.84f),
                 new Vector3(-1.84f, 1.5f, 2.84f),
                 new Vector3(1.84f, 1.5f, 2.84f)
             };
@@ -298,35 +296,6 @@ namespace WizzardsCauldron.EditorTools
                     true);
             }
 
-            CreateCube(
-                parent,
-                "OpenRoofBeamFront",
-                new Vector3(0f, 2.78f, -0.72f),
-                new Vector3(3.52f, 0.13f, 0.17f),
-                assets.WarmWood,
-                true);
-
-            CreateCube(
-                parent,
-                "AstralThresholdSill",
-                new Vector3(0f, 0.18f, -0.84f),
-                new Vector3(3.52f, 0.16f, 0.18f),
-                assets.StoneTrim,
-                true);
-            CreateCube(
-                parent,
-                "AstralThresholdLeftPost",
-                new Vector3(-1.58f, 1.47f, -0.87f),
-                new Vector3(0.13f, 2.5f, 0.16f),
-                assets.StoneTrim,
-                true);
-            CreateCube(
-                parent,
-                "AstralThresholdRightPost",
-                new Vector3(1.58f, 1.47f, -0.87f),
-                new Vector3(0.13f, 2.5f, 0.16f),
-                assets.StoneTrim,
-                true);
             CreateCube(
                 parent,
                 "OpenRoofBeamBack",
@@ -482,43 +451,32 @@ namespace WizzardsCauldron.EditorTools
             Transform parent,
             VisualPassAssets assets)
         {
-            CreateCube(
+            GameObject portalBackdrop = CreatePrimitiveVisualLocal(
                 parent,
                 "AstralThresholdBackdrop",
-                new Vector3(0f, 1.45f, -0.94f),
-                new Vector3(3.44f, 2.55f, 0.035f),
+                PrimitiveType.Quad,
+                new Vector3(0f, 1.55f, -0.975f),
+                Quaternion.identity,
+                new Vector3(4.08f, 2.95f, 1f),
                 assets.PortalCore,
                 true);
-
-            CreateMeshVisual(
-                parent,
-                "AstralThresholdStoneHalo",
-                assets.RingMesh,
-                assets.StoneTrim,
-                new Vector3(0f, 1.5f, -0.905f),
-                Quaternion.identity,
-                new Vector3(1.78f, 1.78f, 1.78f),
-                true,
-                false);
-            CreateMeshVisual(
-                parent,
-                "AstralThresholdRuneHalo",
-                assets.RuneRingMesh,
-                assets.VioletEmission,
-                new Vector3(0f, 1.5f, -0.895f),
-                Quaternion.identity,
-                new Vector3(1.7f, 1.7f, 1.7f),
-                false,
-                false);
+            Renderer portalBackdropRenderer =
+                portalBackdrop.GetComponent<Renderer>();
+            if (portalBackdropRenderer != null)
+            {
+                portalBackdropRenderer.shadowCastingMode =
+                    ShadowCastingMode.Off;
+                portalBackdropRenderer.receiveShadows = false;
+            }
 
             GameObject portal = InstantiateWrapper(
                 assets.PortalPrefab,
                 parent,
                 "WC_AstralPortal");
             portal.transform.position =
-                new Vector3(0f, 1.5f, -0.88f);
+                new Vector3(0f, 1.55f, -0.925f);
             portal.transform.rotation = Quaternion.identity;
-            portal.transform.localScale = Vector3.one * 1.55f;
+            portal.transform.localScale = new Vector3(2.68f, 1.98f, 1f);
             StripPhysics(portal);
 
             CreateAstralThresholdStars(parent, assets);
@@ -530,18 +488,22 @@ namespace WizzardsCauldron.EditorTools
         {
             Vector3[] positions =
             {
-                new Vector3(-1.39f, 0.42f, -0.91f),
-                new Vector3(-1.48f, 0.87f, -0.91f),
-                new Vector3(-1.42f, 1.36f, -0.91f),
-                new Vector3(-1.48f, 1.94f, -0.91f),
-                new Vector3(-1.34f, 2.48f, -0.91f),
-                new Vector3(-0.92f, 2.63f, -0.91f),
-                new Vector3(0.96f, 2.61f, -0.91f),
-                new Vector3(1.37f, 2.43f, -0.91f),
-                new Vector3(1.49f, 1.91f, -0.91f),
-                new Vector3(1.42f, 1.31f, -0.91f),
-                new Vector3(1.48f, 0.79f, -0.91f),
-                new Vector3(1.35f, 0.39f, -0.91f)
+                new Vector3(-1.78f, 0.31f, -0.94f),
+                new Vector3(-1.51f, 0.83f, -0.94f),
+                new Vector3(-1.82f, 1.48f, -0.94f),
+                new Vector3(-1.58f, 2.12f, -0.94f),
+                new Vector3(-1.76f, 2.71f, -0.94f),
+                new Vector3(-1.05f, 2.54f, -0.94f),
+                new Vector3(-0.71f, 0.55f, -0.94f),
+                new Vector3(-0.34f, 2.79f, -0.94f),
+                new Vector3(0.28f, 0.37f, -0.94f),
+                new Vector3(0.67f, 2.66f, -0.94f),
+                new Vector3(1.04f, 0.72f, -0.94f),
+                new Vector3(1.43f, 2.38f, -0.94f),
+                new Vector3(1.78f, 1.78f, -0.94f),
+                new Vector3(1.62f, 1.08f, -0.94f),
+                new Vector3(1.82f, 0.34f, -0.94f),
+                new Vector3(0.05f, 2.18f, -0.94f)
             };
 
             for (int index = 0; index < positions.Length; index++)
@@ -1072,7 +1034,12 @@ namespace WizzardsCauldron.EditorTools
         {
             Renderer targetRenderer =
                 references.FinishTarget.GetComponent<Renderer>();
-            StyleRenderer(targetRenderer, assets.CyanEmission, false);
+            if (targetRenderer != null)
+            {
+                // Keep the gameplay trigger untouched, but hide the large
+                // primitive sphere that otherwise dominates the VR view.
+                targetRenderer.enabled = false;
+            }
 
             CreateMeshVisual(
                 references.FinishTarget.transform,

@@ -36,8 +36,8 @@ It recreates only project-owned visual content in the dedicated target scene, ve
 ## Room and architecture
 
 - Existing floor and three wall renderers use project-owned URP dark-stone/floor materials in the visual scene only; their original BoxColliders remain intact.
-- Added collider-free stone base trim, upper cornices, four observatory columns, two open-roof wooden beams, a cyan floor alchemy ring, and a framed astral threshold on the fourth side.
-- The ceiling remains open. The former empty front side is now visually closed by a collider-free astral portal wall, so it does not create a new movement obstacle.
+- Added collider-free stone base trim, upper cornices, two rear observatory columns, an open-roof wooden back beam, and a cyan floor alchemy ring.
+- The ceiling remains open. The former empty front side is now visually replaced edge-to-edge by a collider-free astral portal wall, with no sill, posts, beam, or circular architectural frame and therefore no new movement obstacle.
 - The selected `FS017_Night` panoramic sky provides a static moonlit astral exterior without motion.
 - Decorative geometry is static where safe and creates no invisible navigation obstacles.
 
@@ -60,7 +60,7 @@ All five final candidates are integrated; no placeholder remains:
 
 | Model | Project-owned wrapper | Integration |
 | --- | --- | --- |
-| Cauldron | `PF_VP_AlexCauldronVisual` | Collider-free child under the existing Cauldron gameplay root; the FBX geometric X-axis is compensated by `+90°` only on the neutral wrapper pivot; black iron and cyan rune treatment. |
+| Cauldron | `PF_VP_AlexCauldronVisual` | Collider-free child under the existing Cauldron gameplay root; the neutral wrapper pivot uses `-90° X` so the FBX axis is vertical and the authored feet are below the rim. The previous `+90°` variant was vertically aligned but upside down. Black iron and cyan rune treatment. |
 | Wand | `PF_VP_AlexWandVisual` | Collider-free child under the existing grabbable wand root; existing `Visual` collider and `WandTip` remain active. |
 | Potion bottle | `PF_VP_AlexPotionVisual` | Three colored instances under the existing potion roots; visual orientation corrected at the neutral pivot, existing capsule colliders preserved. |
 | Shelf/table | `PF_VP_AlexFurnitureVisual` | One combined upright visual under the neutral `Placeholders` host; the FBX geometric X-axis is compensated by `+87.500008°` only on the wrapper pivot; both original shelf/table BoxColliders remain unchanged. |
@@ -70,8 +70,9 @@ Each wrapper keeps Alex's source FBX as an unchanged child with its scale/orient
 
 ## Astral portal
 
-- The previously empty fourth side is now a collider-free astral threshold: a full dark backdrop, stone posts and sill, star points, and a centered portal approximately 2.3 m in diameter.
-- Deep black core, fixed cyan outer ring, violet rune ring, slow counter-rotation (`2.2°/s` and `3.1°/s`), and a gentle `0.09 Hz` pulse.
+- The previously empty fourth side is now a collider-free, full-bleed astral wall: a `4.08 × 2.95 m` UV-mapped quad overlaps the floor and side-wall edges, leaving no visible geometric gap or frame.
+- The project-owned backdrop uses the static `FS017_Night` stars/nebula texture, restrained cyan tinting, and small cyan, violet, and orange star accents.
+- The old opaque circular core and heavy cyan/violet geometry rings remain disabled. Only a very faint rune/ring particle motif, dust, and a gentle optional light pulse remain, so the result reads as one large opening rather than a disc mounted on a wall.
 - Imported Magic Circle is used through a reduced project-owned copy containing only `rot_rune`, `rot_ring`, and `dust`.
 - Rune/ring systems use fixed local meshes and project-owned URP particle materials for Quest stereo stability; only dust remains a billboard.
 - A maximum of ten custom inward particles is used. There is no teleport, collider, screen-space distortion, or aggressive flicker.
@@ -109,6 +110,8 @@ The controller only changes ParticleSystems, one optional Light, and a MaterialP
 
 The existing `CauldronLiquidDisplay` and its protected `LiquidVisual` transform remain in place; only the material was restyled.
 
+The large primitive renderer on `FinishTarget` is hidden and replaced visually by a small collider-free rune. Its trigger, `WandActivator` reference, position, and gameplay behavior are unchanged.
+
 ## Quest performance measures
 
 - Four configured realtime/mixed lights total; no non-directional realtime shadows.
@@ -122,17 +125,17 @@ The existing `CauldronLiquidDisplay` and its protected `LiquidVisual` transform 
 
 ## Validation and tests
 
-- Final Unity compile: success, return code `0`, no C# errors or warnings (`Logs/VisualPassCompile-enriched-final.log`).
-- Builder: success, return code `0`; its pre-save safety gate confirmed all 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild-enriched-final.log`).
-- Final validator: `38 OK`, `0 WARN`, `0 ERROR` (`Logs/VisualPassValidation-enriched-final.log`).
-- Missing scripts: none across 270 target-scene GameObjects.
+- Final Unity compile/build: success, return code `0`, no C# errors or warnings (`Logs/VisualPassBuild-fullwall-uvfinal.log`).
+- Builder safety gate confirmed all 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild-fullwall-uvfinal.log`).
+- Final validator: `38 OK`, `0 WARN`, `0 ERROR` (`Logs/VisualPassValidation-fullwall-final.log`).
+- Missing scripts: none across 266 target-scene GameObjects.
 - Protected source/target state: identical across 121 serialized protected components and 59 protected object poses.
 - Protected coverage: 16 Colliders, 4 Rigidbodies, 80 XR components, and 21 gameplay/controller components.
 - Shared gameplay prefab hashes remain unchanged:
   - `PF_PotionBottle.prefab`: `AC95364430EE70DC1DE6663189BD4465B38B835DCE4DA7D67A1FFFADC561E917`
   - `PF_Wand.prefab`: `737192EB226728DAF8E098BD490C9387680A413566D991DED10FC9CB281BC5D1`
   - `PF_ResetControl.prefab`: `A7C3F5C44186922C80B4E8C35F16F2B028420D3BE1BA4FD634D832E8043AEA88`
-- EditMode tests: `12/12 passed`, `0 failed` (`Logs/VisualPassEditModeResults-enriched.xml`).
+- EditMode tests: `12/12 passed`, `0 failed` (`Logs/VisualPassEditMode-fullwall-final.xml`).
 - Four automated desktop preview images: `Logs/VisualPassPreviews/`.
 
 ## Build Settings

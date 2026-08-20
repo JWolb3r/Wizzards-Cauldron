@@ -312,13 +312,13 @@ namespace WizzardsCauldron.EditorTools
                 {
                     ConfigureOpaqueLit(
                         material,
-                        new Color(0.0005f, 0.001f, 0.002f, 1f),
+                        new Color(0.025f, 0.11f, 0.16f, 1f),
                         0f,
                         0.02f,
-                        null,
+                        nightSkyTexture,
                         null,
                         Vector2.one,
-                        new Color(0.002f, 0.006f, 0.01f, 1f));
+                        new Color(0.012f, 0.08f, 0.12f, 1f));
                     SetFloatIfPresent(material, "_EnvironmentReflections", 0f);
                     SetFloatIfPresent(material, "_SpecularHighlights", 0f);
                 });
@@ -1129,8 +1129,11 @@ namespace WizzardsCauldron.EditorTools
                     StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 // Alex's final FBX carries a -90 degree geometric X rotation.
-                // Compensate only in the replaceable project-owned wrapper.
-                return Quaternion.Euler(90f, 0f, 0f);
+                // A +90 compensation makes its long axis vertical, but leaves
+                // the authored top and bottom exchanged. The equivalent -90
+                // wrapper rotation both compensates the axis and turns the
+                // visible vessel right-side up without touching gameplay or FBX.
+                return Quaternion.Euler(-90f, 0f, 0f);
             }
 
             if (prefabName.IndexOf(
@@ -1266,6 +1269,13 @@ namespace WizzardsCauldron.EditorTools
                 coreRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 coreRenderer.receiveShadows = false;
 
+                // The room portal is a full-wall astral opening. Keep these
+                // reusable animator anchors but hide the old circular plate and
+                // heavy geometric rings so they cannot read as a framed disc.
+                coreRenderer.enabled = false;
+                outerRenderer.enabled = false;
+                innerRenderer.enabled = false;
+
                 AddMagicCircleSource(
                     root.transform,
                     previewScene,
@@ -1396,7 +1406,7 @@ namespace WizzardsCauldron.EditorTools
                         renderer.alignment = ParticleSystemRenderSpace.Local;
                         renderer.sharedMaterial = magicCircleRuneParticle;
                         main.startColor = new ParticleSystem.MinMaxGradient(
-                            new Color(0.42f, 0.12f, 0.68f, 0.28f));
+                            new Color(0.42f, 0.12f, 0.68f, 0.11f));
                     }
                     else if (string.Equals(
                         system.gameObject.name,
@@ -1409,7 +1419,7 @@ namespace WizzardsCauldron.EditorTools
                         renderer.alignment = ParticleSystemRenderSpace.Local;
                         renderer.sharedMaterial = magicCircleRingParticle;
                         main.startColor = new ParticleSystem.MinMaxGradient(
-                            new Color(0.08f, 0.52f, 0.72f, 0.24f));
+                            new Color(0.08f, 0.52f, 0.72f, 0.09f));
                     }
                     else
                     {
