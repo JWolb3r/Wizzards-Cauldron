@@ -305,6 +305,28 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(3.52f, 0.13f, 0.17f),
                 assets.WarmWood,
                 true);
+
+            CreateCube(
+                parent,
+                "AstralThresholdSill",
+                new Vector3(0f, 0.18f, -0.84f),
+                new Vector3(3.52f, 0.16f, 0.18f),
+                assets.StoneTrim,
+                true);
+            CreateCube(
+                parent,
+                "AstralThresholdLeftPost",
+                new Vector3(-1.58f, 1.47f, -0.87f),
+                new Vector3(0.13f, 2.5f, 0.16f),
+                assets.StoneTrim,
+                true);
+            CreateCube(
+                parent,
+                "AstralThresholdRightPost",
+                new Vector3(1.58f, 1.47f, -0.87f),
+                new Vector3(0.13f, 2.5f, 0.16f),
+                assets.StoneTrim,
+                true);
             CreateCube(
                 parent,
                 "OpenRoofBeamBack",
@@ -460,16 +482,87 @@ namespace WizzardsCauldron.EditorTools
             Transform parent,
             VisualPassAssets assets)
         {
+            CreateCube(
+                parent,
+                "AstralThresholdBackdrop",
+                new Vector3(0f, 1.45f, -0.94f),
+                new Vector3(3.44f, 2.55f, 0.035f),
+                assets.PortalCore,
+                true);
+
+            CreateMeshVisual(
+                parent,
+                "AstralThresholdStoneHalo",
+                assets.RingMesh,
+                assets.StoneTrim,
+                new Vector3(0f, 1.5f, -0.905f),
+                Quaternion.identity,
+                new Vector3(1.78f, 1.78f, 1.78f),
+                true,
+                false);
+            CreateMeshVisual(
+                parent,
+                "AstralThresholdRuneHalo",
+                assets.RuneRingMesh,
+                assets.VioletEmission,
+                new Vector3(0f, 1.5f, -0.895f),
+                Quaternion.identity,
+                new Vector3(1.7f, 1.7f, 1.7f),
+                false,
+                false);
+
             GameObject portal = InstantiateWrapper(
                 assets.PortalPrefab,
                 parent,
                 "WC_AstralPortal");
             portal.transform.position =
-                new Vector3(-1.91f, 1.75f, 1.9f);
-            portal.transform.rotation =
-                Quaternion.Euler(0f, 90f, 0f);
-            portal.transform.localScale = Vector3.one;
+                new Vector3(0f, 1.5f, -0.88f);
+            portal.transform.rotation = Quaternion.identity;
+            portal.transform.localScale = Vector3.one * 1.55f;
             StripPhysics(portal);
+
+            CreateAstralThresholdStars(parent, assets);
+        }
+
+        private static void CreateAstralThresholdStars(
+            Transform parent,
+            VisualPassAssets assets)
+        {
+            Vector3[] positions =
+            {
+                new Vector3(-1.39f, 0.42f, -0.91f),
+                new Vector3(-1.48f, 0.87f, -0.91f),
+                new Vector3(-1.42f, 1.36f, -0.91f),
+                new Vector3(-1.48f, 1.94f, -0.91f),
+                new Vector3(-1.34f, 2.48f, -0.91f),
+                new Vector3(-0.92f, 2.63f, -0.91f),
+                new Vector3(0.96f, 2.61f, -0.91f),
+                new Vector3(1.37f, 2.43f, -0.91f),
+                new Vector3(1.49f, 1.91f, -0.91f),
+                new Vector3(1.42f, 1.31f, -0.91f),
+                new Vector3(1.48f, 0.79f, -0.91f),
+                new Vector3(1.35f, 0.39f, -0.91f)
+            };
+
+            for (int index = 0; index < positions.Length; index++)
+            {
+                Material material = index % 5 == 0
+                    ? assets.OrangeEmission
+                    : index % 2 == 0
+                        ? assets.CyanEmission
+                        : assets.VioletEmission;
+                float size = 0.018f + (index % 4) * 0.006f;
+                CreateMeshVisual(
+                    parent,
+                    "AstralThresholdStar_" + (index + 1),
+                    assets.DiscMesh,
+                    material,
+                    positions[index],
+                    Quaternion.identity,
+                    new Vector3(size, size, size),
+                    true,
+                    false);
+            }
         }
 
         private static void BuildDecoration(
@@ -497,6 +590,8 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(0.08f, 0.24f, 0.12f),
                 assets.Gold,
                 true);
+
+            BuildReadableFurnitureSilhouette(parent, assets);
 
             CreateBook(
                 BookNecromancyPath,
@@ -532,6 +627,23 @@ namespace WizzardsCauldron.EditorTools
                 assets,
                 new Vector3(1.57f, 1.29f, 2.72f));
 
+            BuildSideShelfVignettes(parent, assets);
+
+            CreateCube(
+                parent,
+                "BlueCrystalPedestal",
+                new Vector3(-1.58f, 0.34f, 2.42f),
+                new Vector3(0.28f, 0.48f, 0.28f),
+                assets.DarkStone,
+                true);
+            CreateCube(
+                parent,
+                "BlueCrystalPedestalCap",
+                new Vector3(-1.58f, 0.59f, 2.42f),
+                new Vector3(0.34f, 0.05f, 0.34f),
+                assets.Gold,
+                true);
+
             GameObject blueGem = InstantiateDecorativePrefab(
                 BlueGemPath,
                 parent,
@@ -540,7 +652,7 @@ namespace WizzardsCauldron.EditorTools
             PlaceBottomAndCenter(
                 blueGem,
                 new Vector3(-1.58f, 0f, 2.42f),
-                0.1f);
+                0.62f);
             SetStaticRecursively(blueGem);
 
             GameObject goldCrystal = InstantiateDecorativePrefab(
@@ -579,6 +691,181 @@ namespace WizzardsCauldron.EditorTools
                 "WarmTorchRight",
                 new Vector3(0.75f, 1.95f, 2.78f),
                 assets);
+
+            CreateWallCandleSconce(
+                parent,
+                "LeftFrontCandle",
+                new Vector3(-1.81f, 1.62f, -0.18f),
+                Quaternion.Euler(0f, 90f, 0f),
+                assets);
+            CreateWallCandleSconce(
+                parent,
+                "LeftRearCandle",
+                new Vector3(-1.81f, 1.62f, 2.18f),
+                Quaternion.Euler(0f, 90f, 0f),
+                assets);
+            CreateWallCandleSconce(
+                parent,
+                "RightFrontCandle",
+                new Vector3(1.81f, 1.62f, -0.18f),
+                Quaternion.Euler(0f, -90f, 0f),
+                assets);
+            CreateWallCandleSconce(
+                parent,
+                "RightRearCandle",
+                new Vector3(1.81f, 1.62f, 2.18f),
+                Quaternion.Euler(0f, -90f, 0f),
+                assets);
+        }
+
+        private static void BuildReadableFurnitureSilhouette(
+            Transform parent,
+            VisualPassAssets assets)
+        {
+            CreateCube(
+                parent,
+                "WandWorktableTop",
+                new Vector3(0.85f, 0.8f, 0.95f),
+                new Vector3(0.72f, 0.09f, 0.48f),
+                assets.WarmWood,
+                true);
+
+            Vector3[] tableLegs =
+            {
+                new Vector3(0.58f, 0.45f, 0.76f),
+                new Vector3(1.12f, 0.45f, 0.76f),
+                new Vector3(0.58f, 0.45f, 1.14f),
+                new Vector3(1.12f, 0.45f, 1.14f)
+            };
+            for (int index = 0; index < tableLegs.Length; index++)
+            {
+                CreateCube(
+                    parent,
+                    "WandWorktableLeg_" + (index + 1),
+                    tableLegs[index],
+                    new Vector3(0.075f, 0.66f, 0.075f),
+                    assets.WarmWood,
+                    true);
+            }
+
+            CreateCube(
+                parent,
+                "PotionShelfBoard",
+                new Vector3(-0.65f, 1f, 1f),
+                new Vector3(1.06f, 0.09f, 0.42f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "PotionShelfBracketLeft",
+                new Vector3(-0.95f, 0.86f, 1.12f),
+                new Vector3(0.065f, 0.3f, 0.065f),
+                assets.Gold,
+                true);
+            CreateCube(
+                parent,
+                "PotionShelfBracketRight",
+                new Vector3(-0.35f, 0.86f, 1.12f),
+                new Vector3(0.065f, 0.3f, 0.065f),
+                assets.Gold,
+                true);
+
+            CreateCube(
+                parent,
+                "CauldronHearthBase",
+                new Vector3(0.2f, 0.51f, 1.05f),
+                new Vector3(0.46f, 0.34f, 0.46f),
+                assets.DarkStone,
+                true);
+            CreateCube(
+                parent,
+                "CauldronHearthGoldBand",
+                new Vector3(0.2f, 0.69f, 1.05f),
+                new Vector3(0.5f, 0.025f, 0.5f),
+                assets.Gold,
+                true);
+        }
+
+        private static void BuildSideShelfVignettes(
+            Transform parent,
+            VisualPassAssets assets)
+        {
+            CreateCube(
+                parent,
+                "LeftWallCurioShelf",
+                new Vector3(-1.72f, 1.18f, 0.72f),
+                new Vector3(0.28f, 0.06f, 0.88f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "LeftWallCurioBrace",
+                new Vector3(-1.78f, 1.04f, 0.72f),
+                new Vector3(0.12f, 0.25f, 0.08f),
+                assets.Gold,
+                true);
+            CreateBook(
+                BookIcePath,
+                parent,
+                "LeftWallIceBook",
+                new Vector3(-1.55f, 1.22f, 0.56f),
+                new Vector3(0f, 90f, 5f));
+            CreateBook(
+                BookNecromancyPath,
+                parent,
+                "LeftWallAstralBook",
+                new Vector3(-1.55f, 1.22f, 0.82f),
+                new Vector3(0f, 92f, -4f));
+
+            CreateCube(
+                parent,
+                "RightWallPotionShelf",
+                new Vector3(1.72f, 1.38f, 2f),
+                new Vector3(0.28f, 0.06f, 0.82f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "RightWallPotionBrace",
+                new Vector3(1.78f, 1.24f, 2f),
+                new Vector3(0.12f, 0.25f, 0.08f),
+                assets.Gold,
+                true);
+            CreateDecorativePotion(
+                assets.PotionWrapperPrefab,
+                parent,
+                "RightWallBottleBlue",
+                assets.GlassBlue,
+                assets,
+                new Vector3(1.55f, 1.42f, 1.82f));
+            CreateDecorativePotion(
+                assets.PotionWrapperPrefab,
+                parent,
+                "RightWallBottleViolet",
+                assets.GlassViolet,
+                assets,
+                new Vector3(1.55f, 1.42f, 2.15f));
+
+            CreateMeshVisual(
+                parent,
+                "LeftWallRunePlaque",
+                assets.RuneRingMesh,
+                assets.CyanEmission,
+                new Vector3(-1.82f, 2.28f, 0.72f),
+                Quaternion.Euler(0f, 90f, 0f),
+                new Vector3(0.24f, 0.24f, 0.24f),
+                true,
+                false);
+            CreateMeshVisual(
+                parent,
+                "RightWallRunePlaque",
+                assets.RuneRingMesh,
+                assets.VioletEmission,
+                new Vector3(1.82f, 2.3f, 2f),
+                Quaternion.Euler(0f, -90f, 0f),
+                new Vector3(0.24f, 0.24f, 0.24f),
+                true,
+                false);
         }
 
         private static LightingVisuals BuildLightingAndPost(
@@ -821,6 +1108,75 @@ namespace WizzardsCauldron.EditorTools
                 assets.FireParticle);
         }
 
+        private static void CreateWallCandleSconce(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Quaternion rotation,
+            VisualPassAssets assets)
+        {
+            GameObject rootObject = new GameObject(name);
+            rootObject.transform.SetParent(parent, true);
+            rootObject.transform.position = position;
+            rootObject.transform.rotation = rotation;
+
+            CreatePrimitiveVisualLocal(
+                rootObject.transform,
+                "Backplate",
+                PrimitiveType.Cube,
+                Vector3.zero,
+                Quaternion.identity,
+                new Vector3(0.13f, 0.22f, 0.035f),
+                assets.BlackIron,
+                true);
+            CreatePrimitiveVisualLocal(
+                rootObject.transform,
+                "GoldenArm",
+                PrimitiveType.Cube,
+                new Vector3(0f, -0.04f, 0.11f),
+                Quaternion.identity,
+                new Vector3(0.035f, 0.035f, 0.22f),
+                assets.Gold,
+                true);
+            CreatePrimitiveVisualLocal(
+                rootObject.transform,
+                "DripTray",
+                PrimitiveType.Cylinder,
+                new Vector3(0f, -0.025f, 0.21f),
+                Quaternion.identity,
+                new Vector3(0.08f, 0.012f, 0.08f),
+                assets.BlackIron,
+                true);
+            CreatePrimitiveVisualLocal(
+                rootObject.transform,
+                "CandleWax",
+                PrimitiveType.Cylinder,
+                new Vector3(0f, 0.085f, 0.21f),
+                Quaternion.identity,
+                new Vector3(0.043f, 0.105f, 0.043f),
+                assets.Label,
+                true);
+            CreatePrimitiveVisualLocal(
+                rootObject.transform,
+                "Wick",
+                PrimitiveType.Cylinder,
+                new Vector3(0f, 0.2f, 0.21f),
+                Quaternion.identity,
+                new Vector3(0.008f, 0.018f, 0.008f),
+                assets.BlackIron,
+                true);
+
+            CreateTorchParticles(
+                rootObject.transform,
+                name + "Flame",
+                rootObject.transform.TransformPoint(
+                    new Vector3(0f, 0.235f, 0.21f)),
+                assets.FireParticle,
+                4,
+                2.5f,
+                0.58f);
+        }
+
         private static void CreateBook(
             string assetPath,
             Transform parent,
@@ -925,7 +1281,10 @@ namespace WizzardsCauldron.EditorTools
             Transform parent,
             string name,
             Vector3 worldPosition,
-            Material material)
+            Material material,
+            int maximumParticles = 12,
+            float emissionRate = 6f,
+            float sizeMultiplier = 1f)
         {
             GameObject particleObject = new GameObject(name);
             particleObject.transform.SetParent(parent, true);
@@ -939,16 +1298,18 @@ namespace WizzardsCauldron.EditorTools
             main.playOnAwake = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.7f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.055f, 0.11f);
+            main.startSize = new ParticleSystem.MinMaxCurve(
+                0.055f * sizeMultiplier,
+                0.11f * sizeMultiplier);
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(1f, 0.35f, 0.04f, 0.9f),
                 new Color(1f, 0.78f, 0.18f, 0.95f));
-            main.maxParticles = 12;
+            main.maxParticles = maximumParticles;
             main.simulationSpace = ParticleSystemSimulationSpace.Local;
 
             ParticleSystem.EmissionModule emission = particles.emission;
             emission.enabled = true;
-            emission.rateOverTime = 6f;
+            emission.rateOverTime = emissionRate;
 
             ParticleSystem.ShapeModule shape = particles.shape;
             shape.enabled = true;
@@ -1089,6 +1450,38 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return cube;
+        }
+
+        private static GameObject CreatePrimitiveVisualLocal(
+            Transform parent,
+            string name,
+            PrimitiveType primitiveType,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Material material,
+            bool markStatic)
+        {
+            GameObject visual = GameObject.CreatePrimitive(primitiveType);
+            visual.name = name;
+            visual.transform.SetParent(parent, false);
+            visual.transform.localPosition = localPosition;
+            visual.transform.localRotation = localRotation;
+            visual.transform.localScale = localScale;
+
+            Collider collider = visual.GetComponent<Collider>();
+            if (collider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+
+            StyleRenderer(visual.GetComponent<Renderer>(), material, true);
+            if (markStatic)
+            {
+                SetStaticRecursively(visual);
+            }
+
+            return visual;
         }
 
         private static GameObject CreateMeshVisual(

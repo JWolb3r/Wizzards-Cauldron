@@ -23,7 +23,7 @@ namespace WizzardsCauldron.EditorTools
         {
             new PreviewView(
                 "01_RoomOverview.png",
-                new Vector3(0f, 1.55f, -1.25f),
+                new Vector3(0f, 1.55f, -0.55f),
                 new Vector3(0f, 1.25f, 1.25f),
                 68f),
             new PreviewView(
@@ -33,9 +33,9 @@ namespace WizzardsCauldron.EditorTools
                 62f),
             new PreviewView(
                 "03_AstralPortal.png",
-                new Vector3(0.85f, 1.6f, 0.35f),
-                new Vector3(-1.91f, 1.75f, 1.9f),
-                58f),
+                new Vector3(0f, 1.58f, 0.72f),
+                new Vector3(0f, 1.5f, -0.88f),
+                66f),
             new PreviewView(
                 "04_BackCorner.png",
                 new Vector3(1.55f, 1.62f, 2.55f),

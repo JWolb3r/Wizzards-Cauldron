@@ -47,10 +47,10 @@ Last updated: 2026-08-20 (Europe/Berlin)
 
 | Model | Final project path | Status |
 | --- | --- | --- |
-| Cauldron | `Assets/WizzardsCauldron/Art/Models/Alex/cauldron_1.fbx` | 2026-08-15 16:30:14, 255,568 bytes. Final candidate per Joel. New export has corrected identity object rotation and a centered, ground-level pivot. Five declared material records; polygon faces use slots 0–1. Verify visually in a wrapper before use. |
+| Cauldron | `Assets/WizzardsCauldron/Art/Models/Alex/cauldron_1.fbx` | 2026-08-15 16:30:14, 255,568 bytes. Final candidate per Joel. The centered pivot is retained; its remaining `-90°` geometric X-axis is safely compensated with `+90°` only on the project-owned wrapper `VisualPivot`. Five declared material records; polygon faces use slots 0–1. Built orientation verified upright. |
 | Wand | `Assets/WizzardsCauldron/Art/Models/Alex/wand_1.fbx` | 2026-08-15 16:39:16, 90,752 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Three declared material records; polygon faces use slots 0–1. Keep the existing interactive wand root and `WandTip`. |
 | Potion bottle | `Assets/WizzardsCauldron/Art/Models/Alex/bottle_1.fbx` | 2026-08-15 16:24:40, 287,696 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Eleven declared material records; polygon faces use slots 0–2. Keep `PF_PotionBottle` as the interactive root. |
-| Shelf and table | `Assets/WizzardsCauldron/Art/Models/Alex/shelf_and_table_!.fbx` | 2026-08-15 16:32:34, 67,456 bytes. Latest candidate; original filename preserved. Geometry and normals valid; UV0 is not usable. Two declared material records and both polygon slots are used. Use project-owned wrappers and separate scene placement as needed. |
+| Shelf and table | `Assets/WizzardsCauldron/Art/Models/Alex/shelf_and_table_!.fbx` | 2026-08-15 16:32:34, 67,456 bytes. Latest candidate; original filename preserved. Geometry and normals valid; UV0 is not usable. Its `-87.500008°` geometric X-axis is compensated with `+87.500008°` only on the project-owned wrapper `VisualPivot`. Two declared material records and both polygon slots are used. Built orientation verified upright. |
 | Reset button | `Assets/WizzardsCauldron/Art/Models/Alex/reset_button.fbx` | 2026-08-15 16:41:30, 115,040 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Four declared material records; polygon faces use slots 0–1. Preserve `PF_ResetControl`, its interaction volume, and reset reference. |
 
 ## Imported Asset Store packages
@@ -97,14 +97,14 @@ Third-party contents are read-only sources. Create project-owned wrappers and ma
 
 ## Validation status
 
-- Final compile: successful on 2026-08-20 18:32 CEST, return code `0`, no C# errors or warnings; `Logs/VisualPassCompile-postpreflight.log`.
-- Visual builder: successful, return code `0`; its pre-save safety gate confirmed 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild-preflightfinal.log`).
-- Final visual validator: 38 checks passed, 0 warnings, 0 errors; `Logs/VisualPassValidation-postpreflight.log`.
-- Missing-script scan: none in the 198 target-scene GameObjects.
+- Final compile: successful on 2026-08-20 19:01 CEST, return code `0`, no C# errors or warnings; `Logs/VisualPassCompile-enriched-final.log`.
+- Visual builder: successful, return code `0`; its pre-save safety gate confirmed 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild-enriched-final.log`).
+- Final visual validator: 38 checks passed, 0 warnings, 0 errors; `Logs/VisualPassValidation-enriched-final.log`.
+- Missing-script scan: none in the 270 target-scene GameObjects.
 - Protected-state comparison: 121 serialized components and 59 protected poses match the source, covering 16 colliders, 4 rigidbodies, 80 XR components, and 21 gameplay/controller components.
-- Performance validation: 4/4 realtime-light budget, no small realtime shadows, all particle systems at or below 48 particles, total configured maximum 106/128, and no particle colliders.
+- Performance validation: 4/4 realtime-light budget, no small realtime shadows, all particle systems at or below 48 particles, total configured maximum 122/128, and no particle colliders.
 - Quest Performance configuration is intentionally unchanged: additional lights and HDR remain disabled. The target therefore uses a warm directional/ambient fallback and LDR-safe Bloom threshold `0.5`.
-- EditMode tests: 12/12 passed, 0 failed; `Logs/VisualPassEditModeResults.xml`.
+- EditMode tests: 12/12 passed, 0 failed; `Logs/VisualPassEditModeResults-enriched.xml`.
 - Automated desktop previews: `Logs/VisualPassPreviews/`.
 - Protected source SHA-256 remains `2A13B8401B8C493386575CBBB09E09BA43F1BCFBEEE3C7420D7EB106A638B0BC`.
 - Shared gameplay prefabs remain byte-identical to the pre-pass hashes. No Asset Store original or Alex FBX was edited.

@@ -1086,11 +1086,7 @@ namespace WizzardsCauldron.EditorTools
                 SceneManager.MoveGameObjectToScene(visualPivot, previewScene);
                 visualPivot.transform.SetParent(root.transform, false);
                 visualPivot.transform.localRotation =
-                    prefabName.IndexOf(
-                        "Potion",
-                        StringComparison.OrdinalIgnoreCase) >= 0
-                        ? Quaternion.Euler(180f, 0f, 0f)
-                        : Quaternion.identity;
+                    GetAlexVisualPivotRotation(prefabName);
 
                 GameObject modelInstance =
                     PrefabUtility.InstantiatePrefab(modelAsset, previewScene) as GameObject;
@@ -1116,6 +1112,36 @@ namespace WizzardsCauldron.EditorTools
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        private static Quaternion GetAlexVisualPivotRotation(
+            string prefabName)
+        {
+            if (prefabName.IndexOf(
+                    "Potion",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return Quaternion.Euler(180f, 0f, 0f);
+            }
+
+            if (prefabName.IndexOf(
+                    "Cauldron",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // Alex's final FBX carries a -90 degree geometric X rotation.
+                // Compensate only in the replaceable project-owned wrapper.
+                return Quaternion.Euler(90f, 0f, 0f);
+            }
+
+            if (prefabName.IndexOf(
+                    "Furniture",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // The combined shelf/table FBX is authored at -87.500008 X.
+                return Quaternion.Euler(87.500008f, 0f, 0f);
+            }
+
+            return Quaternion.identity;
         }
 
         private static void ApplyMaterials(GameObject root, Material[] materials)
