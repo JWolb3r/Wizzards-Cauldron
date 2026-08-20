@@ -1311,3 +1311,14 @@ Before the class presentation:
 10. Validate the slice in the simulator throughout development and in the target headset at the first practical stable milestone.
 
 This vertical slice should be the first implementation target. Once it is reliable, the team can multiply content and add presentation polish without redesigning the core interaction.
+
+## Visual Pass Checkpoint — 2026-08-20
+
+- Completed visual scene: `Assets/WizzardsCauldron/Scenes/SCN_InteractionTest_Visual.unity`.
+- Protected source scene and shared gameplay prefabs remain unchanged.
+- Project-owned Alex wrappers, URP materials, astral portal, architecture, decoration, lighting, post-processing, and event-driven visual feedback are implemented.
+- Build Settings now enable only the visual target scene.
+- Automated results: final visual validation `38 OK / 0 WARN / 0 ERROR`; EditMode tests `12/12 passed`.
+- Quest Performance URP settings remain unchanged; the scene uses warm directional/ambient lighting and LDR-safe Bloom so it does not depend on disabled additional lights or HDR.
+- Detailed handoff: `Docs/VISUAL_PASS_REPORT.md`.
+- Remaining gate: Unity Play Mode visual review followed by a Meta Quest Android device/performance test.
