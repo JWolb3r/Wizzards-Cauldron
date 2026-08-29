@@ -465,11 +465,11 @@ namespace WizzardsCauldron.EditorTools
             {
                 GameObject cauldronWrapper = BuildAlexWrapper(
                     previewScene,
-                    "PF_VP_AlexCauldronVisual",
-                    VisualPrefabsFolder + "/PF_VP_AlexCauldronVisual.prefab",
-                    CauldronModelPath,
-                    blackIron,
-                    cyanEmission);
+                "PF_VP_AlexCauldronVisual",
+                VisualPrefabsFolder + "/PF_VP_AlexCauldronVisual.prefab",
+                CauldronModelPath,
+                blackIron,
+                blackIron);
 
                 GameObject wandWrapper = BuildAlexWrapper(
                     previewScene,

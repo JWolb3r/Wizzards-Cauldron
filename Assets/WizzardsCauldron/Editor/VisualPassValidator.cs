@@ -14,6 +14,7 @@ using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
 using WizzardsCauldron.Presentation;
+using WizzardsCauldron.UI;
 
 namespace WizzardsCauldron.EditorTools
 {
@@ -75,6 +76,24 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(-0.65f, 1f, 1f),
                 Quaternion.identity,
                 new Vector3(1.065f, 0.08f, 0.4f),
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/PotionRed",
+                new Vector3(0.254f, 1.16f, 1f),
+                Quaternion.identity,
+                Vector3.one,
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/PotionGreen",
+                new Vector3(0.426f, 1.002f, 1f),
+                Quaternion.identity,
+                Vector3.one,
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/PotionYellow",
+                new Vector3(0.634f, 1.025f, 1f),
+                Quaternion.identity,
+                Vector3.one,
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/ResetControl",
@@ -631,7 +650,8 @@ namespace WizzardsCauldron.EditorTools
             foreach (Transform transform in transforms)
             {
                 if (IsUnderGeneratedVisualRoot(transform) ||
-                    IsUnderAuthorizedGameplayExtension(transform))
+                    IsUnderAuthorizedGameplayExtension(transform) ||
+                    IsUnderLegacyExtensionPotion(transform))
                 {
                     continue;
                 }
@@ -757,6 +777,41 @@ namespace WizzardsCauldron.EditorTools
                 GameplayExtensionRootName);
         }
 
+        private static bool IsUnderLegacyExtensionPotion(
+            Transform transform)
+        {
+            if (transform == null)
+            {
+                return false;
+            }
+
+            Transform current = transform;
+            while (current != null && current.parent != null &&
+                   !string.Equals(
+                       current.parent.name,
+                       "Placeholders",
+                       StringComparison.Ordinal))
+            {
+                current = current.parent;
+            }
+
+            if (current == null || current.parent == null ||
+                !string.Equals(
+                    current.parent.name,
+                    "Placeholders",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string name = current.name;
+            return string.Equals(name, "Potion_Blue", StringComparison.Ordinal) ||
+                   string.Equals(name, "Potion_Violet", StringComparison.Ordinal) ||
+                   string.Equals(name, "Potion_Cyan", StringComparison.Ordinal) ||
+                   string.Equals(name, "Potion_Orange", StringComparison.Ordinal) ||
+                   string.Equals(name, "Potion_Magenta", StringComparison.Ordinal);
+        }
+
         private static bool IsUnderGeneratedVisualRoot(
             Transform transform)
         {
@@ -801,6 +856,13 @@ namespace WizzardsCauldron.EditorTools
                 return string.Equals(
                     propertyPath,
                     "_bottomLocalY",
+                    StringComparison.Ordinal);
+            }
+
+            if (component is PotionInspectionPanel)
+            {
+                return propertyPath.StartsWith(
+                    "_sources.Array.",
                     StringComparison.Ordinal);
             }
 
@@ -1179,6 +1241,9 @@ namespace WizzardsCauldron.EditorTools
 
             PotionController[] extensionPotions = extensionRoot
                 .GetComponentsInChildren<PotionController>(true);
+            PotionInspectionSource[] extensionInspectionSources =
+                extensionRoot.GetComponentsInChildren<
+                    PotionInspectionSource>(true);
             PhysicsResettable[] extensionResettables = extensionRoot
                 .GetComponentsInChildren<PhysicsResettable>(true);
             Rigidbody[] extensionRigidbodies = extensionRoot
@@ -1207,6 +1272,13 @@ namespace WizzardsCauldron.EditorTools
                     "expected " + ExpectedNewPotions.Length +
                     " extension PhysicsResettable components, found " +
                     extensionResettables.Length);
+            }
+            if (extensionInspectionSources.Length != ExpectedNewPotions.Length)
+            {
+                issues.Add(
+                    "expected " + ExpectedNewPotions.Length +
+                    " extension PotionInspectionSource components, found " +
+                    extensionInspectionSources.Length);
             }
             if (extensionRigidbodies.Length != ExpectedNewPotions.Length)
             {
@@ -1303,39 +1375,71 @@ namespace WizzardsCauldron.EditorTools
                     issues.Add(GetHierarchyPath(potion.transform) +
                                " has no enabled solid bottle Collider");
                 }
+
+                PotionInspectionSource inspectionSource =
+                    potion.GetComponent<PotionInspectionSource>();
+                if (inspectionSource == null ||
+                    inspectionSource.Potion != potion)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " has no self-referencing PotionInspectionSource");
+                }
             }
+
+            ValidatePotionInspectionPanel(
+                sceneRoots,
+                issues);
 
             ValidateWorkbenchCollider(
                 extensionRoot,
                 "MainWorkbenchBodyCollider",
-                new Vector3(0.05f, 0.47f, 0.7f),
-                new Vector3(2.36f, 0.74f, 0.14f),
+                new Vector3(0.05f, 0.47f, 0.92f),
+                new Vector3(2.36f, 0.74f, 0.84f),
                 issues);
             ValidateWorkbenchCollider(
                 extensionRoot,
                 "CentralWorktopSurfaceCollider",
-                new Vector3(-0.38f, 0.8f, 1.01f),
-                new Vector3(0.64f, 0.09f, 0.62f),
+                new Vector3(-0.38f, 0.765f, 1.01f),
+                new Vector3(0.66f, 0.16f, 0.64f),
                 issues);
             ValidateWorkbenchCollider(
                 extensionRoot,
                 "ExpandedPotionWorktopCollider",
-                new Vector3(-0.36f, 0.8f, 0.64f),
-                new Vector3(0.92f, 0.09f, 0.24f),
+                new Vector3(-0.36f, 0.765f, 0.64f),
+                new Vector3(0.94f, 0.16f, 0.26f),
                 issues);
             ValidateWorkbenchCollider(
                 extensionRoot,
                 "PotionExtensionBodyCollider",
                 new Vector3(-1.49f, 0.55f, 1.02f),
-                new Vector3(0.62f, 0.99f, 0.42f),
+                new Vector3(0.64f, 0.99f, 0.44f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "RightWorktopSurfaceCollider",
+                new Vector3(0.84f, 0.765f, 1.01f),
+                new Vector3(0.78f, 0.16f, 0.64f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "WorkbenchBridgeSurfaceCollider",
+                new Vector3(0.20f, 0.765f, 0.745f),
+                new Vector3(0.54f, 0.16f, 0.11f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "FrontRoomBoundaryCollider",
+                new Vector3(0f, 1.50f, -1.02f),
+                new Vector3(4.10f, 3.00f, 0.10f),
                 issues);
 
             BoxCollider[] tableColliders = extensionRoot
                 .GetComponentsInChildren<BoxCollider>(true);
-            if (tableColliders.Length != 4)
+            if (tableColliders.Length != 7)
             {
                 issues.Add(
-                    "expected exactly four table BoxCollider components, found " +
+                    "expected exactly seven target-only collision BoxCollider " +
+                    "components, found " +
                     tableColliders.Length);
             }
 
@@ -1346,13 +1450,54 @@ namespace WizzardsCauldron.EditorTools
                 report.Ok(
                     "Gameplay extension is complete: five defined, grabbable, " +
                     "resettable potions; capacity-eight puzzle; and four " +
-                    "non-trigger table collision volumes.");
+                    "non-trigger workbench volumes plus a front-room boundary.");
             }
             else
             {
                 report.Error(
                     "Gameplay-extension validation found " + issues.Count +
                     " issue(s): " + string.Join(" | ", issues.ToArray()));
+            }
+        }
+
+        private static void ValidatePotionInspectionPanel(
+            GameObject[] sceneRoots,
+            ICollection<string> issues)
+        {
+            PotionInspectionPanel[] panels = sceneRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionInspectionPanel>(true))
+                .ToArray();
+            PotionController[] scenePotions = sceneRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+
+            if (panels.Length != 1)
+            {
+                issues.Add(
+                    "expected exactly one PotionInspectionPanel, found " +
+                    panels.Length);
+                return;
+            }
+
+            SerializedObject serialized = new SerializedObject(panels[0]);
+            SerializedProperty sources = serialized.FindProperty("_sources");
+            PotionInspectionSource[] expectedSources = scenePotions
+                .Select(potion =>
+                    potion.GetComponent<PotionInspectionSource>())
+                .Where(source => source != null)
+                .ToArray();
+
+            if (scenePotions.Length != ExpectedPotionCount ||
+                expectedSources.Length != ExpectedPotionCount ||
+                !ArrayReferencesExactlyMatch(
+                    sources,
+                    expectedSources.Cast<UnityEngine.Object>()))
+            {
+                issues.Add(
+                    "PotionInspectionPanel must reference the eight unique " +
+                    "PotionInspectionSource components in the visual scene");
             }
         }
 

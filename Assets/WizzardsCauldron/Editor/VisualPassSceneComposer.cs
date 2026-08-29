@@ -443,16 +443,27 @@ namespace WizzardsCauldron.EditorTools
                 references.LiquidVisual.GetComponent<Renderer>();
             StyleRenderer(liquidRenderer, assets.Liquid, false);
 
+            Vector3 cauldronPosition =
+                references.Cauldron.transform.position;
+
             GameObject cauldronRune = CreateMeshVisual(
                 references.Cauldron.transform,
                 CauldronRuneName,
                 assets.RuneRingMesh,
                 assets.CyanEmission,
-                new Vector3(0.2f, 1.025f, 1.05f),
+                cauldronPosition + new Vector3(0f, 0.18f, 0f),
                 Quaternion.Euler(90f, 0f, 0f),
                 new Vector3(0.215f, 0.215f, 0.215f),
                 false,
                 false);
+            Renderer cauldronRuneRenderer =
+                cauldronRune.GetComponent<Renderer>();
+            if (cauldronRuneRenderer != null)
+            {
+                // The rune is an event accent, not a permanent cyan rim.
+                // VisualFeedbackController enables it only during a pulse.
+                cauldronRuneRenderer.enabled = false;
+            }
 
             DisableRenderersUnderNamedVisual(
                 references.WandRoot.transform);
@@ -537,8 +548,7 @@ namespace WizzardsCauldron.EditorTools
 
             return new InteractiveVisuals
             {
-                CauldronRuneRenderer =
-                    cauldronRune.GetComponent<Renderer>()
+                CauldronRuneRenderer = cauldronRuneRenderer
             };
         }
 
@@ -1109,9 +1119,10 @@ namespace WizzardsCauldron.EditorTools
             Light cauldronAccent = CreatePointLight(
                 parent,
                 "CauldronCyanAccent",
-                new Vector3(0.2f, 1.23f, 1.05f),
+                references.Cauldron.transform.position +
+                    new Vector3(0f, 0.385f, 0f),
                 new Color(0.08f, 0.72f, 1f, 1f),
-                0.16f,
+                0f,
                 1.25f);
 
             GameObject volumeObject = new GameObject(
@@ -1173,10 +1184,13 @@ namespace WizzardsCauldron.EditorTools
                 "WC_VisualFeedbackController");
             controllerObject.transform.SetParent(parent, false);
 
+            Vector3 cauldronPosition =
+                references.Cauldron.transform.position;
+
             ParticleSystem accepted = CreateBurstParticles(
                 controllerObject.transform,
                 "AcceptedPotionSpark",
-                new Vector3(0.2f, 1.15f, 1.05f),
+                cauldronPosition + new Vector3(0f, 0.305f, 0f),
                 assets.PortalParticle,
                 16,
                 0.45f,
@@ -1185,7 +1199,7 @@ namespace WizzardsCauldron.EditorTools
             ParticleSystem rejected = CreateBurstParticles(
                 controllerObject.transform,
                 "RejectedPotionSmoke",
-                new Vector3(0.2f, 1.14f, 1.05f),
+                cauldronPosition + new Vector3(0f, 0.295f, 0f),
                 assets.PortalParticle,
                 12,
                 0.65f,
@@ -1194,7 +1208,7 @@ namespace WizzardsCauldron.EditorTools
             ParticleSystem success = CreateBurstParticles(
                 controllerObject.transform,
                 "AttemptSuccessBurst",
-                new Vector3(0.2f, 1.32f, 1.05f),
+                cauldronPosition + new Vector3(0f, 0.475f, 0f),
                 assets.PortalParticle,
                 24,
                 1.05f,
@@ -1203,7 +1217,7 @@ namespace WizzardsCauldron.EditorTools
             ParticleSystem reset = CreateBurstParticles(
                 controllerObject.transform,
                 "SessionResetPulse",
-                new Vector3(0.2f, 1.08f, 1.05f),
+                cauldronPosition + new Vector3(0f, 0.235f, 0f),
                 assets.PortalParticle,
                 12,
                 0.55f,

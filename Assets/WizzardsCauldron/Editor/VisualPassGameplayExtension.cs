@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
+using WizzardsCauldron.UI;
 
 namespace WizzardsCauldron.EditorTools
 {
@@ -127,6 +128,12 @@ namespace WizzardsCauldron.EditorTools
             "ExpandedPotionWorktopCollider";
         internal const string PotionExtensionBodyColliderName =
             "PotionExtensionBodyCollider";
+        internal const string RightWorktopSurfaceColliderName =
+            "RightWorktopSurfaceCollider";
+        internal const string WorkbenchBridgeSurfaceColliderName =
+            "WorkbenchBridgeSurfaceCollider";
+        internal const string FrontRoomBoundaryColliderName =
+            "FrontRoomBoundaryCollider";
 
         private const string PotionDataFolder =
             "Assets/WizzardsCauldron/Data/Potions";
@@ -143,35 +150,35 @@ namespace WizzardsCauldron.EditorTools
                 2,
                 1,
                 new Color(0.08f, 0.35f, 1f, 1f),
-                new Vector3(-1.68f, 1.165f, 1.02f)),
+                new Vector3(-1.68f, 1.185f, 1.02f)),
             new PotionBuildSpec(
                 "violet",
                 "Violet Potion",
                 5,
                 3,
                 new Color(0.55f, 0.12f, 0.85f, 1f),
-                new Vector3(-1.49f, 1.165f, 1.02f)),
+                new Vector3(-1.49f, 1.185f, 1.02f)),
             new PotionBuildSpec(
                 "cyan",
                 "Cyan Potion",
                 7,
                 4,
                 new Color(0.05f, 0.85f, 0.9f, 1f),
-                new Vector3(-1.30f, 1.165f, 1.02f)),
+                new Vector3(-1.30f, 1.185f, 1.02f)),
             new PotionBuildSpec(
                 "orange",
                 "Orange Potion",
                 4,
                 2,
                 new Color(1f, 0.32f, 0.04f, 1f),
-                new Vector3(-0.58f, 0.965f, 0.64f)),
+                new Vector3(-0.58f, 0.985f, 0.64f)),
             new PotionBuildSpec(
                 "magenta",
                 "Magenta Potion",
                 9,
                 5,
                 new Color(0.95f, 0.07f, 0.48f, 1f),
-                new Vector3(-0.30f, 0.965f, 0.64f))
+                new Vector3(-0.30f, 0.985f, 0.64f))
         };
 
         /// <summary>
@@ -263,10 +270,14 @@ namespace WizzardsCauldron.EditorTools
             GameObject[] previousRoots = FindGeneratedRoots(scene);
             PotionController[] originalPotions =
                 FindOriginalPotions(scene, previousRoots, data);
+            PotionController[] legacyExtensionPotions =
+                FindLegacyExtensionPotions(scene, previousRoots, data);
             GameSessionController gameSession =
                 FindUniqueInScene<GameSessionController>(scene);
             RoomResetCoordinator roomReset =
                 FindUniqueInScene<RoomResetCoordinator>(scene);
+            PotionInspectionPanel inspectionPanel =
+                FindUniqueInScene<PotionInspectionPanel>(scene);
             PhysicsResettable wandReset = FindExistingWandReset(scene);
 
             for (int index = 0;
@@ -294,12 +305,23 @@ namespace WizzardsCauldron.EditorTools
                 PotionDefinition definition =
                     data.FindDefinition(spec.StableId);
 
-                newPotions[index] = CreatePotionInstance(
-                    scene,
-                    gameplayRoot.transform,
-                    data.PotionBottlePrefab,
-                    definition,
-                    spec);
+                PotionController legacyPotion =
+                    FindLegacyPotion(
+                        legacyExtensionPotions,
+                        definition,
+                        spec.StableId);
+                newPotions[index] = legacyPotion != null
+                    ? AdoptPotionInstance(
+                        gameplayRoot.transform,
+                        legacyPotion,
+                        definition,
+                        spec)
+                    : CreatePotionInstance(
+                        scene,
+                        gameplayRoot.transform,
+                        data.PotionBottlePrefab,
+                        definition,
+                        spec);
             }
 
             PotionController[] allPotions = CombinePotions(
@@ -307,6 +329,8 @@ namespace WizzardsCauldron.EditorTools
                 newPotions);
             PhysicsResettable[] potionPhysics =
                 ResolvePotionPhysics(allPotions);
+            PotionInspectionSource[] inspectionSources =
+                ResolvePotionInspectionSources(allPotions);
 
             AssignObjectReference(
                 gameSession,
@@ -316,6 +340,10 @@ namespace WizzardsCauldron.EditorTools
                 roomReset,
                 "_potions",
                 allPotions);
+            AssignObjectArray(
+                inspectionPanel,
+                "_sources",
+                inspectionSources);
 
             var resetPhysics = new PhysicsResettable[9];
             for (int index = 0;
@@ -336,23 +364,38 @@ namespace WizzardsCauldron.EditorTools
                 CreateStaticBoxCollider(
                     gameplayRoot.transform,
                     MainWorkbenchBodyColliderName,
-                    new Vector3(0.05f, 0.47f, 0.70f),
-                    new Vector3(2.36f, 0.74f, 0.14f)),
+                    new Vector3(0.05f, 0.47f, 0.92f),
+                    new Vector3(2.36f, 0.74f, 0.84f)),
                 CreateStaticBoxCollider(
                     gameplayRoot.transform,
                     CentralWorktopSurfaceColliderName,
-                    new Vector3(-0.38f, 0.80f, 1.01f),
-                    new Vector3(0.64f, 0.09f, 0.62f)),
+                    new Vector3(-0.38f, 0.765f, 1.01f),
+                    new Vector3(0.66f, 0.16f, 0.64f)),
                 CreateStaticBoxCollider(
                     gameplayRoot.transform,
                     ExpandedPotionWorktopColliderName,
-                    new Vector3(-0.36f, 0.80f, 0.64f),
-                    new Vector3(0.92f, 0.09f, 0.24f)),
+                    new Vector3(-0.36f, 0.765f, 0.64f),
+                    new Vector3(0.94f, 0.16f, 0.26f)),
                 CreateStaticBoxCollider(
                     gameplayRoot.transform,
                     PotionExtensionBodyColliderName,
                     new Vector3(-1.49f, 0.55f, 1.02f),
-                    new Vector3(0.62f, 0.99f, 0.42f))
+                    new Vector3(0.64f, 0.99f, 0.44f)),
+                CreateStaticBoxCollider(
+                    gameplayRoot.transform,
+                    RightWorktopSurfaceColliderName,
+                    new Vector3(0.84f, 0.765f, 1.01f),
+                    new Vector3(0.78f, 0.16f, 0.64f)),
+                CreateStaticBoxCollider(
+                    gameplayRoot.transform,
+                    WorkbenchBridgeSurfaceColliderName,
+                    new Vector3(0.20f, 0.765f, 0.745f),
+                    new Vector3(0.54f, 0.16f, 0.11f)),
+                CreateStaticBoxCollider(
+                    gameplayRoot.transform,
+                    FrontRoomBoundaryColliderName,
+                    new Vector3(0f, 1.50f, -1.02f),
+                    new Vector3(4.10f, 3.00f, 0.10f))
             };
 
             data.SetComposedSceneState(
@@ -366,7 +409,8 @@ namespace WizzardsCauldron.EditorTools
             Debug.Log(
                 "[WC_GAMEPLAY_EXTENSION] Scene extension rebuilt: 5 new " +
                 "interactive potions, 8 resettable potions, the existing " +
-                "wand reset and 4 static table colliders.");
+                "wand reset, six static workbench colliders and one " +
+                "front-room boundary.");
 
             return data;
         }
@@ -542,14 +586,6 @@ namespace WizzardsCauldron.EditorTools
                         PotionController>(true));
             }
 
-            if (candidates.Count != 3)
-            {
-                throw new InvalidOperationException(
-                    "Expected exactly the three protected original potions " +
-                    "outside " + GameplayRootName + ", found " +
-                    candidates.Count + ".");
-            }
-
             var ordered = new PotionController[3];
             for (int definitionIndex = 0;
                  definitionIndex < 3;
@@ -586,6 +622,134 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return ordered;
+        }
+
+        private static PotionController[] FindLegacyExtensionPotions(
+            Scene scene,
+            GameObject[] generatedRoots,
+            VisualPassGameplayExtensionData data)
+        {
+            var candidates = new List<PotionController>();
+            GameObject[] roots = scene.GetRootGameObjects();
+
+            for (int rootIndex = 0;
+                 rootIndex < roots.Length;
+                 rootIndex++)
+            {
+                GameObject root = roots[rootIndex];
+                if (ContainsReference(generatedRoots, root))
+                {
+                    continue;
+                }
+
+                candidates.AddRange(
+                    root.GetComponentsInChildren<PotionController>(true));
+            }
+
+            var legacy = new List<PotionController>();
+            for (int candidateIndex = 0;
+                 candidateIndex < candidates.Count;
+                 candidateIndex++)
+            {
+                PotionController candidate = candidates[candidateIndex];
+                if (candidate == null || candidate.Definition == null ||
+                    !ContainsDefinition(
+                        data.NewPotionDefinitions,
+                        candidate.Definition))
+                {
+                    continue;
+                }
+
+                legacy.Add(candidate);
+            }
+
+            return legacy.ToArray();
+        }
+
+        private static PotionController FindLegacyPotion(
+            PotionController[] legacyPotions,
+            PotionDefinition definition,
+            string stableId)
+        {
+            PotionController match = null;
+            for (int index = 0;
+                 index < legacyPotions.Length;
+                 index++)
+            {
+                PotionController candidate = legacyPotions[index];
+                if (candidate == null || candidate.Definition == null ||
+                    !string.Equals(
+                        candidate.Definition.StableId,
+                        stableId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (match != null)
+                {
+                    throw new InvalidOperationException(
+                        "More than one legacy target-scene potion uses " +
+                        stableId + ". Resolve the duplicate before rebuilding.");
+                }
+
+                match = candidate;
+            }
+
+            return match;
+        }
+
+        private static bool ContainsDefinition(
+            IReadOnlyList<PotionDefinition> definitions,
+            PotionDefinition candidate)
+        {
+            for (int index = 0;
+                 index < definitions.Count;
+                 index++)
+            {
+                if (definitions[index] == candidate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static PotionController AdoptPotionInstance(
+            Transform parent,
+            PotionController potion,
+            PotionDefinition definition,
+            PotionBuildSpec spec)
+        {
+            if (potion == null)
+            {
+                throw new ArgumentNullException(nameof(potion));
+            }
+
+            potion.gameObject.name = "Potion_" + ToTitleCase(spec.StableId);
+            potion.transform.SetParent(parent, false);
+            potion.transform.SetPositionAndRotation(
+                spec.Position,
+                Quaternion.identity);
+            potion.transform.localScale = Vector3.one;
+
+            RequireComponent<Rigidbody>(potion.gameObject);
+            RequireComponent<PhysicsResettable>(potion.gameObject);
+            RequireComponent<PotionInspectionSource>(potion.gameObject);
+            if (potion.GetComponentInChildren<Collider>(true) == null)
+            {
+                throw new InvalidOperationException(
+                    potion.name + " has no Collider from its legacy " +
+                    "target-scene instance.");
+            }
+
+            AssignObjectReference(potion, "_definition", definition);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(
+                potion.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(potion);
+
+            return potion;
         }
 
         private static PhysicsResettable FindExistingWandReset(
@@ -631,6 +795,34 @@ namespace WizzardsCauldron.EditorTools
             {
                 result[index] = RequireComponent<PhysicsResettable>(
                     potions[index].gameObject);
+            }
+
+            return result;
+        }
+
+        private static PotionInspectionSource[] ResolvePotionInspectionSources(
+            PotionController[] potions)
+        {
+            var result = new PotionInspectionSource[potions.Length];
+
+            for (int index = 0;
+                 index < potions.Length;
+                 index++)
+            {
+                PotionController potion = potions[index];
+                PotionInspectionSource source =
+                    RequireComponent<PotionInspectionSource>(
+                        potion.gameObject);
+
+                if (source.Potion != potion)
+                {
+                    throw new InvalidOperationException(
+                        GetHierarchyPath(potion.transform) +
+                        " has a PotionInspectionSource that does not " +
+                        "reference its own PotionController.");
+                }
+
+                result[index] = source;
             }
 
             return result;
@@ -783,6 +975,7 @@ namespace WizzardsCauldron.EditorTools
             RequireComponent<PotionController>(prefab);
             RequireComponent<Rigidbody>(prefab);
             RequireComponent<PhysicsResettable>(prefab);
+            RequireComponent<PotionInspectionSource>(prefab);
 
             if (prefab.GetComponentInChildren<Collider>(true) == null)
             {
@@ -802,6 +995,25 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return component;
+        }
+
+        private static string GetHierarchyPath(Transform transform)
+        {
+            if (transform == null)
+            {
+                return "<null>";
+            }
+
+            var parts = new List<string>();
+            Transform current = transform;
+            while (current != null)
+            {
+                parts.Add(current.name);
+                current = current.parent;
+            }
+
+            parts.Reverse();
+            return string.Join("/", parts.ToArray());
         }
 
         private static T LoadRequiredAsset<T>(string path)

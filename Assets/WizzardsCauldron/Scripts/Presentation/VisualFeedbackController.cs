@@ -119,6 +119,7 @@ namespace WizzardsCauldron.Presentation
         private float _baseLightIntensity;
         private Color _baseLightColor = Color.white;
         private Color _baseRuneEmissionColor = Color.black;
+        private bool _baseRuneRendererEnabled;
 
         private void Awake()
         {
@@ -401,6 +402,13 @@ namespace WizzardsCauldron.Presentation
                     strength);
             }
 
+            if (_runeRenderer != null)
+            {
+                _runeRenderer.enabled =
+                    _baseRuneRendererEnabled ||
+                    strength > 0.0001f;
+            }
+
             if (!_hasRuneEmissionProperty ||
                 _runeRenderer == null)
             {
@@ -432,6 +440,9 @@ namespace WizzardsCauldron.Presentation
             }
 
             _hasRuneEmissionProperty = false;
+            _baseRuneRendererEnabled =
+                _runeRenderer != null &&
+                _runeRenderer.enabled;
 
             if (_runeRenderer == null ||
                 _runeRenderer.sharedMaterial == null)
@@ -513,6 +524,12 @@ namespace WizzardsCauldron.Presentation
             if (_hasRuneEmissionProperty)
             {
                 SetRuneEmission(_baseRuneEmissionColor);
+            }
+
+            if (_runeRenderer != null)
+            {
+                _runeRenderer.enabled =
+                    _baseRuneRendererEnabled;
             }
         }
 
