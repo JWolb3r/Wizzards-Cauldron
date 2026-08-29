@@ -13,6 +13,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
+using WizzardsCauldron.Presentation;
 
 namespace WizzardsCauldron.EditorTools
 {
@@ -30,6 +31,10 @@ namespace WizzardsCauldron.EditorTools
             "Assets/WizzardsCauldron/Scenes/SCN_InteractionTest_Visual.unity";
         private const string SampleScenePath = "Assets/Scenes/SampleScene.unity";
         private const string GeneratedRootName = "__WC_VISUAL_PASS__";
+        private const string GameplayExtensionRootName =
+            "__WC_GAMEPLAY_EXTENSION__";
+        private const string ExpandedPuzzlePath =
+            "Assets/WizzardsCauldron/Data/Puzzles/SO_PuzzleVisualExpanded.asset";
         private const string PerformanceUrpAssetPath =
             "Assets/Settings/Project Configuration/Performance URP Config.asset";
         private const string ExpectedSourceSha256 =
@@ -38,6 +43,64 @@ namespace WizzardsCauldron.EditorTools
         private const int MaximumRealtimeLights = 4;
         private const int MaximumParticlesPerSystem = 48;
         private const int MaximumTotalParticles = 128;
+        private const int ExpectedPotionCount = 8;
+        private const int ExpectedPhysicsResettableCount = 9;
+
+        private static readonly PotionExpectation[] ExpectedNewPotions =
+        {
+            new PotionExpectation("blue", 2, 1),
+            new PotionExpectation("violet", 5, 3),
+            new PotionExpectation("cyan", 7, 4),
+            new PotionExpectation("orange", 4, 2),
+            new PotionExpectation("magenta", 9, 5)
+        };
+
+        private static readonly AuthorizedLayoutExpectation[]
+            AuthorizedVisualLayout =
+        {
+            new AuthorizedLayoutExpectation(
+                "Placeholders/Cauldron",
+                new Vector3(1.36f, 0.845f, 1.05f),
+                Quaternion.identity,
+                new Vector3(0.38f, 0.35f, 0.38f),
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/FinishTarget",
+                new Vector3(0.949f, 1.2f, 1.05f),
+                Quaternion.identity,
+                new Vector3(0.15f, 0.15f, 0.15f),
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/PotionShelf",
+                new Vector3(-0.65f, 1f, 1f),
+                Quaternion.identity,
+                new Vector3(1.065f, 0.08f, 0.4f),
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/ResetControl",
+                new Vector3(1.9185f, 1.2f, 0.7f),
+                Quaternion.identity,
+                Vector3.one,
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/Wand",
+                new Vector3(0.286f, 0.78f, 0.859f),
+                new Quaternion(0f, 0f, 0.7071068f, 0.7071068f),
+                Vector3.one,
+                0),
+            new AuthorizedLayoutExpectation(
+                "Placeholders/WandTable",
+                new Vector3(0.05f, 0.712f, 0.95f),
+                Quaternion.identity,
+                new Vector3(1.42f, 0.07f, 0.3f),
+                0),
+            new AuthorizedLayoutExpectation(
+                "XR Origin (XR Rig)",
+                new Vector3(-1.12f, 0f, -0.276f),
+                Quaternion.identity,
+                Vector3.one,
+                2)
+        };
 
         private static readonly HashSet<string> KnownGameplayComponentTypes =
             new HashSet<string>(StringComparer.Ordinal)
@@ -114,6 +177,8 @@ namespace WizzardsCauldron.EditorTools
                     "Visual build preflight requires loaded source and target scenes.");
             }
 
+            AssertAuthorizedVisualLayout(targetScene);
+
             ProtectedSceneSnapshot source =
                 CaptureProtectedSceneSnapshot(sourceScene);
             ProtectedSceneSnapshot target =
@@ -131,6 +196,9 @@ namespace WizzardsCauldron.EditorTools
 
             if (differences.Count > 0)
             {
+                Debug.LogError(
+                    "[WC_VISUAL_PASS] Protected preflight differences: " +
+                    string.Join(" | ", differences.Take(50).ToArray()));
                 throw new InvalidOperationException(
                     "Protected target-scene state differs from the functional " +
                     "source in " + differences.Count + " place(s). Visual build " +
@@ -330,6 +398,28 @@ namespace WizzardsCauldron.EditorTools
                 ValidateGeneratedRoot(generatedRoot, report);
             }
 
+            GameObject[] gameplayExtensionRoots = sceneRoots
+                .Where(root => string.Equals(
+                    root.name,
+                    GameplayExtensionRootName,
+                    StringComparison.Ordinal))
+                .ToArray();
+            if (gameplayExtensionRoots.Length != 1)
+            {
+                report.Error(
+                    "Expected exactly one authorized gameplay-extension root named " +
+                    GameplayExtensionRootName + ", found " +
+                    gameplayExtensionRoots.Length + ".");
+            }
+            else
+            {
+                report.Ok("Authorized gameplay-extension root exists exactly once.");
+                ValidateGameplayExtension(
+                    gameplayExtensionRoots[0],
+                    sceneRoots,
+                    report);
+            }
+
             Component[] sceneComponents = sceneRoots
                 .SelectMany(root => root.GetComponentsInChildren<Component>(true))
                 .ToArray();
@@ -405,7 +495,130 @@ namespace WizzardsCauldron.EditorTools
                         : string.Empty));
             }
 
+            ValidateAuthorizedVisualLayout(targetScene, report);
             ValidateExplicitInteractionIntegrity(targetScene.GetRootGameObjects(), report);
+        }
+
+        private static void AssertAuthorizedVisualLayout(Scene targetScene)
+        {
+            List<string> issues = GetAuthorizedVisualLayoutIssues(targetScene);
+            if (issues.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "The dedicated visual scene no longer matches its approved " +
+                    "target-only gameplay layout: " +
+                    string.Join(" | ", issues.ToArray()));
+            }
+
+            Debug.Log(
+                "[WC_VISUAL_PASS] Approved visual-scene layout passed: " +
+                AuthorizedVisualLayout.Length +
+                " exact target-only poses and cauldron liquid offset 0.6.");
+        }
+
+        private static void ValidateAuthorizedVisualLayout(
+            Scene targetScene,
+            ValidationReport report)
+        {
+            List<string> issues = GetAuthorizedVisualLayoutIssues(targetScene);
+            if (issues.Count == 0)
+            {
+                report.Ok(
+                    "Approved target-only layout is exact: cauldron, finish target, " +
+                    "potion shelf, reset, wand, worktable and XR start pose.");
+            }
+            else
+            {
+                report.Error(
+                    "Approved target-only layout differs in " + issues.Count +
+                    " place(s): " + string.Join(" | ", issues.ToArray()));
+            }
+        }
+
+        private static List<string> GetAuthorizedVisualLayoutIssues(
+            Scene targetScene)
+        {
+            List<string> issues = new List<string>();
+            Transform[] transforms = targetScene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .ToArray();
+
+            foreach (AuthorizedLayoutExpectation expectation in
+                     AuthorizedVisualLayout)
+            {
+                Transform[] matches = transforms
+                    .Where(transform => string.Equals(
+                        GetHierarchyPath(transform),
+                        expectation.HierarchyPath,
+                        StringComparison.Ordinal))
+                    .ToArray();
+                if (matches.Length != 1)
+                {
+                    issues.Add(
+                        expectation.HierarchyPath + " expected once, found " +
+                        matches.Length);
+                    continue;
+                }
+
+                Transform transform = matches[0];
+                bool poseMatches =
+                    (transform.localPosition - expectation.LocalPosition)
+                        .sqrMagnitude <= 0.00000001f &&
+                    Mathf.Abs(Quaternion.Dot(
+                        transform.localRotation,
+                        expectation.LocalRotation)) >= 0.999999f &&
+                    (transform.localScale - expectation.LocalScale)
+                        .sqrMagnitude <= 0.00000001f;
+                GameObject gameObject = transform.gameObject;
+                if (!poseMatches ||
+                    !gameObject.activeSelf ||
+                    gameObject.layer != expectation.Layer ||
+                    !string.Equals(
+                        gameObject.tag,
+                        "Untagged",
+                        StringComparison.Ordinal))
+                {
+                    issues.Add(
+                        expectation.HierarchyPath +
+                        " no longer matches the exact approved pose/state");
+                }
+            }
+
+            CauldronLiquidDisplay[] liquidDisplays = targetScene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<CauldronLiquidDisplay>(true))
+                .ToArray();
+            if (liquidDisplays.Length != 1)
+            {
+                issues.Add(
+                    "expected one CauldronLiquidDisplay, found " +
+                    liquidDisplays.Length);
+            }
+            else
+            {
+                SerializedObject serialized =
+                    new SerializedObject(liquidDisplays[0]);
+                SerializedProperty bottom =
+                    serialized.FindProperty("_bottomLocalY");
+                if (bottom == null ||
+                    Mathf.Abs(bottom.floatValue - 0.6f) > 0.000001f)
+                {
+                    issues.Add(
+                        "CauldronLiquidDisplay._bottomLocalY must remain 0.6 " +
+                        "for the approved Alex-cauldron placement");
+                }
+            }
+
+            return issues;
+        }
+
+        private static bool IsAuthorizedVisualLayoutPath(string path)
+        {
+            return AuthorizedVisualLayout.Any(expectation => string.Equals(
+                expectation.HierarchyPath,
+                path,
+                StringComparison.Ordinal));
         }
 
         private static ProtectedSceneSnapshot CaptureProtectedSceneSnapshot(Scene scene)
@@ -417,6 +630,12 @@ namespace WizzardsCauldron.EditorTools
 
             foreach (Transform transform in transforms)
             {
+                if (IsUnderGeneratedVisualRoot(transform) ||
+                    IsUnderAuthorizedGameplayExtension(transform))
+                {
+                    continue;
+                }
+
                 Component[] components = transform.gameObject.GetComponents<Component>();
                 Dictionary<Type, int> typeOrdinals = new Dictionary<Type, int>();
                 bool protectedObject = false;
@@ -488,10 +707,7 @@ namespace WizzardsCauldron.EditorTools
                        : GetHierarchyPath(transform.parent)) +
                    ";localPosition=" + FormatVector3(transform.localPosition) +
                    ";localRotation=" + FormatQuaternion(transform.localRotation) +
-                   ";localScale=" + FormatVector3(transform.localScale) +
-                   ";worldPosition=" + FormatVector3(transform.position) +
-                   ";worldRotation=" + FormatQuaternion(transform.rotation) +
-                   ";worldScale=" + FormatVector3(transform.lossyScale);
+                   ";localScale=" + FormatVector3(transform.localScale);
         }
 
         private static SortedDictionary<string, string> CaptureSerializedComponentState(
@@ -515,6 +731,13 @@ namespace WizzardsCauldron.EditorTools
                     continue;
                 }
 
+                if (IsAuthorizedGameplayExtensionField(
+                    component,
+                    property.propertyPath))
+                {
+                    continue;
+                }
+
                 if (property.propertyType == SerializedPropertyType.Generic)
                 {
                     continue;
@@ -524,6 +747,74 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return fields;
+        }
+
+        private static bool IsUnderAuthorizedGameplayExtension(
+            Transform transform)
+        {
+            return IsUnderSceneRootNamed(
+                transform,
+                GameplayExtensionRootName);
+        }
+
+        private static bool IsUnderGeneratedVisualRoot(
+            Transform transform)
+        {
+            return IsUnderSceneRootNamed(
+                transform,
+                GeneratedRootName);
+        }
+
+        private static bool IsUnderSceneRootNamed(
+            Transform transform,
+            string rootName)
+        {
+            if (transform == null)
+            {
+                return false;
+            }
+
+            Transform sceneRoot = transform.root;
+            return sceneRoot != null &&
+                   sceneRoot.parent == null &&
+                   sceneRoot.gameObject.scene == transform.gameObject.scene &&
+                   string.Equals(
+                       sceneRoot.name,
+                       rootName,
+                       StringComparison.Ordinal);
+        }
+
+        private static bool IsAuthorizedGameplayExtensionField(
+            Component component,
+            string propertyPath)
+        {
+            if (component is GameSessionController)
+            {
+                return string.Equals(
+                    propertyPath,
+                    "_puzzleDefinition",
+                    StringComparison.Ordinal);
+            }
+
+            if (component is CauldronLiquidDisplay)
+            {
+                return string.Equals(
+                    propertyPath,
+                    "_bottomLocalY",
+                    StringComparison.Ordinal);
+            }
+
+            if (!(component is RoomResetCoordinator))
+            {
+                return false;
+            }
+
+            return propertyPath.StartsWith(
+                       "_potions.Array.",
+                       StringComparison.Ordinal) ||
+                   propertyPath.StartsWith(
+                       "_physicsObjects.Array.",
+                       StringComparison.Ordinal);
         }
 
         private static bool IsUnitySerializationPlumbing(string propertyPath)
@@ -658,6 +949,15 @@ namespace WizzardsCauldron.EditorTools
         {
             foreach (string key in source.Keys.Union(target.Keys).OrderBy(key => key))
             {
+                if (string.Equals(
+                        label,
+                        "protected object",
+                        StringComparison.Ordinal) &&
+                    IsAuthorizedVisualLayoutPath(key))
+                {
+                    continue;
+                }
+
                 string sourceValue;
                 string targetValue;
                 bool sourceHas = source.TryGetValue(key, out sourceValue);
@@ -673,7 +973,10 @@ namespace WizzardsCauldron.EditorTools
                 }
                 else if (!string.Equals(sourceValue, targetValue, StringComparison.Ordinal))
                 {
-                    differences.Add(label + " changed: " + key);
+                    differences.Add(
+                        label + " changed: " + key +
+                        " (source=" + sourceValue +
+                        ", target=" + targetValue + ")");
                 }
             }
         }
@@ -775,12 +1078,14 @@ namespace WizzardsCauldron.EditorTools
                     root.GetComponentsInChildren<RoomResetCoordinator>(true))
                 .ToArray();
             bool resetValid = resetCoordinators.Length == 1 &&
-                              ValidateRoomResetSerializedArrays(resetCoordinators[0]);
+                              ValidateRoomResetSerializedArrays(
+                                  resetCoordinators[0],
+                                  targetRoots);
             if (resetValid)
             {
                 report.Ok(
                     "RoomResetCoordinator retains GameSession/CauldronIntake references, " +
-                    "three potion entries, and four physics-reset entries.");
+                    "eight unique potion entries, and nine unique physics-reset entries.");
             }
             else
             {
@@ -790,7 +1095,8 @@ namespace WizzardsCauldron.EditorTools
         }
 
         private static bool ValidateRoomResetSerializedArrays(
-            RoomResetCoordinator coordinator)
+            RoomResetCoordinator coordinator,
+            GameObject[] targetRoots)
         {
             SerializedObject serializedObject = new SerializedObject(coordinator);
             SerializedProperty gameSession = serializedObject.FindProperty("_gameSession");
@@ -799,30 +1105,390 @@ namespace WizzardsCauldron.EditorTools
             SerializedProperty physicsObjects =
                 serializedObject.FindProperty("_physicsObjects");
 
-            return gameSession != null && gameSession.objectReferenceValue != null &&
-                   intake != null && intake.objectReferenceValue != null &&
-                   ArrayHasNonNullReferences(potions, 3) &&
-                   ArrayHasNonNullReferences(physicsObjects, 4);
+            GameSessionController[] sceneSessions = targetRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<GameSessionController>(true))
+                .ToArray();
+            CauldronIntake[] sceneIntakes = targetRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<CauldronIntake>(true))
+                .ToArray();
+            PotionController[] scenePotions = targetRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+            PhysicsResettable[] scenePhysicsObjects = targetRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PhysicsResettable>(true))
+                .ToArray();
+
+            return sceneSessions.Length == 1 &&
+                   sceneIntakes.Length == 1 &&
+                   gameSession != null &&
+                   gameSession.objectReferenceValue == sceneSessions[0] &&
+                   intake != null &&
+                   intake.objectReferenceValue == sceneIntakes[0] &&
+                   ArrayReferencesExactlyMatch(
+                       potions,
+                       scenePotions.Cast<UnityEngine.Object>()) &&
+                   ArrayReferencesExactlyMatch(
+                       physicsObjects,
+                       scenePhysicsObjects.Cast<UnityEngine.Object>());
         }
 
-        private static bool ArrayHasNonNullReferences(
+        private static bool ArrayReferencesExactlyMatch(
             SerializedProperty array,
-            int expectedSize)
+            IEnumerable<UnityEngine.Object> expectedReferences)
         {
-            if (array == null || !array.isArray || array.arraySize != expectedSize)
+            UnityEngine.Object[] expected = expectedReferences.ToArray();
+            if (array == null || !array.isArray ||
+                array.arraySize != expected.Length)
             {
                 return false;
             }
 
+            HashSet<UnityEngine.Object> actual =
+                new HashSet<UnityEngine.Object>();
             for (int index = 0; index < array.arraySize; index++)
             {
-                if (array.GetArrayElementAtIndex(index).objectReferenceValue == null)
+                UnityEngine.Object item = array
+                    .GetArrayElementAtIndex(index)
+                    .objectReferenceValue;
+                if (item == null || !actual.Add(item))
                 {
                     return false;
                 }
             }
 
-            return true;
+            return actual.SetEquals(expected);
+        }
+
+        private static void ValidateGameplayExtension(
+            GameObject extensionRoot,
+            GameObject[] sceneRoots,
+            ValidationReport report)
+        {
+            List<string> issues = new List<string>();
+
+            Component[] rootComponents = extensionRoot.GetComponents<Component>();
+            if (rootComponents.Any(component =>
+                component != null && !(component is Transform)))
+            {
+                issues.Add("extension scene root must contain only its Transform");
+            }
+
+            PotionController[] extensionPotions = extensionRoot
+                .GetComponentsInChildren<PotionController>(true);
+            PhysicsResettable[] extensionResettables = extensionRoot
+                .GetComponentsInChildren<PhysicsResettable>(true);
+            Rigidbody[] extensionRigidbodies = extensionRoot
+                .GetComponentsInChildren<Rigidbody>(true);
+            Component[] extensionComponents = extensionRoot
+                .GetComponentsInChildren<Component>(true);
+            Component[] extensionGrabInteractables = extensionComponents
+                .Where(component =>
+                    component != null &&
+                    string.Equals(
+                        component.GetType().Name,
+                        "XRGrabInteractable",
+                        StringComparison.Ordinal))
+                .ToArray();
+
+            if (extensionPotions.Length != ExpectedNewPotions.Length)
+            {
+                issues.Add(
+                    "expected " + ExpectedNewPotions.Length +
+                    " extension PotionController components, found " +
+                    extensionPotions.Length);
+            }
+            if (extensionResettables.Length != ExpectedNewPotions.Length)
+            {
+                issues.Add(
+                    "expected " + ExpectedNewPotions.Length +
+                    " extension PhysicsResettable components, found " +
+                    extensionResettables.Length);
+            }
+            if (extensionRigidbodies.Length != ExpectedNewPotions.Length)
+            {
+                issues.Add(
+                    "expected " + ExpectedNewPotions.Length +
+                    " extension Rigidbody components, found " +
+                    extensionRigidbodies.Length);
+            }
+            if (extensionGrabInteractables.Length != ExpectedNewPotions.Length)
+            {
+                issues.Add(
+                    "expected " + ExpectedNewPotions.Length +
+                    " extension XRGrabInteractable components, found " +
+                    extensionGrabInteractables.Length);
+            }
+
+            HashSet<string> extensionIds = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+            foreach (PotionController potion in extensionPotions)
+            {
+                PotionDefinition definition = potion.Definition;
+                if (definition == null)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " has no PotionDefinition");
+                    continue;
+                }
+
+                if (!extensionIds.Add(definition.StableId))
+                {
+                    issues.Add("duplicate extension potion ID " +
+                               definition.StableId);
+                }
+
+                PotionExpectation expectation = ExpectedNewPotions
+                    .FirstOrDefault(item => string.Equals(
+                        item.StableId,
+                        definition.StableId,
+                        StringComparison.OrdinalIgnoreCase));
+                if (expectation == null)
+                {
+                    issues.Add("unexpected extension potion ID " +
+                               definition.StableId);
+                }
+                else
+                {
+                    if (definition.HealthValue != expectation.HealthValue ||
+                        definition.FillValue != expectation.FillValue)
+                    {
+                        issues.Add(
+                            definition.StableId + " values differ: expected health/fill " +
+                            expectation.HealthValue + "/" + expectation.FillValue +
+                            ", found " + definition.HealthValue + "/" +
+                            definition.FillValue);
+                    }
+
+                    string assetPath = AssetDatabase.GetAssetPath(definition);
+                    if (!string.Equals(
+                        assetPath,
+                        expectation.AssetPath,
+                        StringComparison.Ordinal))
+                    {
+                        issues.Add(
+                            definition.StableId + " uses unexpected definition asset " +
+                            assetPath);
+                    }
+                }
+
+                if (potion.GetComponent<Rigidbody>() == null ||
+                    potion.GetComponent<PhysicsResettable>() == null)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " lost its Rigidbody or PhysicsResettable");
+                }
+
+                bool hasGrab = potion.GetComponents<Component>()
+                    .Any(component =>
+                        component != null &&
+                        string.Equals(
+                            component.GetType().Name,
+                            "XRGrabInteractable",
+                            StringComparison.Ordinal));
+                if (!hasGrab)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " has no XRGrabInteractable");
+                }
+
+                bool hasSolidCollider = potion
+                    .GetComponentsInChildren<Collider>(true)
+                    .Any(collider => collider.enabled && !collider.isTrigger);
+                if (!hasSolidCollider)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " has no enabled solid bottle Collider");
+                }
+            }
+
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "MainWorkbenchBodyCollider",
+                new Vector3(0.05f, 0.47f, 0.7f),
+                new Vector3(2.36f, 0.74f, 0.14f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "CentralWorktopSurfaceCollider",
+                new Vector3(-0.38f, 0.8f, 1.01f),
+                new Vector3(0.64f, 0.09f, 0.62f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "ExpandedPotionWorktopCollider",
+                new Vector3(-0.36f, 0.8f, 0.64f),
+                new Vector3(0.92f, 0.09f, 0.24f),
+                issues);
+            ValidateWorkbenchCollider(
+                extensionRoot,
+                "PotionExtensionBodyCollider",
+                new Vector3(-1.49f, 0.55f, 1.02f),
+                new Vector3(0.62f, 0.99f, 0.42f),
+                issues);
+
+            BoxCollider[] tableColliders = extensionRoot
+                .GetComponentsInChildren<BoxCollider>(true);
+            if (tableColliders.Length != 4)
+            {
+                issues.Add(
+                    "expected exactly four table BoxCollider components, found " +
+                    tableColliders.Length);
+            }
+
+            ValidateExpandedPuzzle(sceneRoots, issues);
+
+            if (issues.Count == 0)
+            {
+                report.Ok(
+                    "Gameplay extension is complete: five defined, grabbable, " +
+                    "resettable potions; capacity-eight puzzle; and four " +
+                    "non-trigger table collision volumes.");
+            }
+            else
+            {
+                report.Error(
+                    "Gameplay-extension validation found " + issues.Count +
+                    " issue(s): " + string.Join(" | ", issues.ToArray()));
+            }
+        }
+
+        private static void ValidateWorkbenchCollider(
+            GameObject extensionRoot,
+            string objectName,
+            Vector3 expectedCenter,
+            Vector3 expectedSize,
+            ICollection<string> issues)
+        {
+            Transform[] matches = extensionRoot
+                .GetComponentsInChildren<Transform>(true)
+                .Where(transform => string.Equals(
+                    transform.name,
+                    objectName,
+                    StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                issues.Add(
+                    "expected exactly one " + objectName + ", found " +
+                    matches.Length);
+                return;
+            }
+
+            GameObject colliderObject = matches[0].gameObject;
+            BoxCollider collider = colliderObject.GetComponent<BoxCollider>();
+            if (collider == null || !collider.enabled || collider.isTrigger)
+            {
+                issues.Add(objectName +
+                           " must have one enabled, non-trigger BoxCollider");
+                return;
+            }
+
+            if (colliderObject.GetComponent<Rigidbody>() != null ||
+                colliderObject.GetComponent<Renderer>() != null)
+            {
+                issues.Add(objectName +
+                           " must be a renderer-free static collision object");
+            }
+            if (!colliderObject.isStatic)
+            {
+                issues.Add(objectName + " is not marked static");
+            }
+
+            Bounds bounds = collider.bounds;
+            if ((bounds.center - expectedCenter).sqrMagnitude > 0.0004f ||
+                (bounds.size - expectedSize).sqrMagnitude > 0.0004f)
+            {
+                issues.Add(
+                    objectName + " bounds differ from the visible table geometry " +
+                    "(center=" + FormatVector3(bounds.center) +
+                    ", size=" + FormatVector3(bounds.size) + ")");
+            }
+        }
+
+        private static void ValidateExpandedPuzzle(
+            GameObject[] sceneRoots,
+            ICollection<string> issues)
+        {
+            PuzzleDefinition expectedPuzzle = AssetDatabase.LoadAssetAtPath<
+                PuzzleDefinition>(ExpandedPuzzlePath);
+            if (expectedPuzzle == null)
+            {
+                issues.Add("expanded puzzle asset is missing at " +
+                           ExpandedPuzzlePath);
+                return;
+            }
+
+            GameSessionController[] sessions = sceneRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<GameSessionController>(true))
+                .ToArray();
+            if (sessions.Length != 1)
+            {
+                issues.Add("expected one GameSessionController while validating puzzle");
+                return;
+            }
+
+            SerializedObject serializedSession = new SerializedObject(sessions[0]);
+            SerializedProperty puzzleProperty =
+                serializedSession.FindProperty("_puzzleDefinition");
+            if (puzzleProperty == null ||
+                puzzleProperty.objectReferenceValue != expectedPuzzle)
+            {
+                issues.Add(
+                    "GameSessionController does not reference " +
+                    ExpandedPuzzlePath);
+            }
+
+            if (!expectedPuzzle.TryValidate(out string puzzleError))
+            {
+                issues.Add("expanded puzzle is invalid: " + puzzleError);
+                return;
+            }
+            if (expectedPuzzle.CauldronCapacity != 8 ||
+                expectedPuzzle.Potions.Count != ExpectedPotionCount)
+            {
+                issues.Add(
+                    "expanded puzzle must contain eight potions at capacity 8");
+                return;
+            }
+
+            PotionController[] scenePotions = sceneRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+            HashSet<PotionDefinition> sceneDefinitions = new HashSet<PotionDefinition>(
+                scenePotions.Select(potion => potion.Definition));
+            HashSet<PotionDefinition> puzzleDefinitions = new HashSet<PotionDefinition>(
+                expectedPuzzle.Potions);
+            if (sceneDefinitions.Contains(null) ||
+                sceneDefinitions.Count != ExpectedPotionCount ||
+                !sceneDefinitions.SetEquals(puzzleDefinitions))
+            {
+                issues.Add(
+                    "expanded puzzle definitions do not exactly match the eight " +
+                    "PotionController instances in the visual scene");
+            }
+
+            KnapsackItem[] items = expectedPuzzle.Potions
+                .Select(potion => new KnapsackItem(
+                    potion.StableId,
+                    potion.HealthValue,
+                    potion.FillValue))
+                .ToArray();
+            PuzzleSolution solution = PuzzleSolver.Solve(8, items);
+            string[] expectedIds = { "blue", "orange", "magenta" };
+            if (solution.MaximumHealth != 15 ||
+                solution.UsedCapacity != 8 ||
+                !solution.SelectedPotionIds.SequenceEqual(expectedIds))
+            {
+                issues.Add(
+                    "expanded puzzle optimum must be blue + orange + magenta " +
+                    "for 15 health at 8 fill");
+            }
         }
 
         private static void ValidateGeneratedRoot(
@@ -1073,7 +1739,14 @@ namespace WizzardsCauldron.EditorTools
             GameObject[] sceneRoots,
             ValidationReport report)
         {
-            ValidateComponentCount<PotionController>(sceneRoots, 3, report);
+            ValidateComponentCount<PotionController>(
+                sceneRoots,
+                ExpectedPotionCount,
+                report);
+            ValidateComponentCount<PhysicsResettable>(
+                sceneRoots,
+                ExpectedPhysicsResettableCount,
+                report);
             ValidateComponentCount<CauldronController>(sceneRoots, 1, report);
             ValidateComponentCount<CauldronIntake>(sceneRoots, 1, report);
             ValidateComponentCount<GameSessionController>(sceneRoots, 1, report);
@@ -1094,7 +1767,7 @@ namespace WizzardsCauldron.EditorTools
             if (actualCount == expectedCount)
             {
                 report.Ok(
-                    typeof(T).Name + " count preserved: " + actualCount + ".");
+                    typeof(T).Name + " count matches expected: " + actualCount + ".");
             }
             else
             {
@@ -1739,6 +2412,51 @@ namespace WizzardsCauldron.EditorTools
         private static string FormatFloat(float value)
         {
             return value.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        private sealed class PotionExpectation
+        {
+            public PotionExpectation(
+                string stableId,
+                int healthValue,
+                int fillValue)
+            {
+                StableId = stableId;
+                HealthValue = healthValue;
+                FillValue = fillValue;
+                AssetPath =
+                    "Assets/WizzardsCauldron/Data/Potions/SO_Potion" +
+                    char.ToUpperInvariant(stableId[0]) +
+                    stableId.Substring(1) + ".asset";
+            }
+
+            public string StableId { get; private set; }
+            public int HealthValue { get; private set; }
+            public int FillValue { get; private set; }
+            public string AssetPath { get; private set; }
+        }
+
+        private sealed class AuthorizedLayoutExpectation
+        {
+            public AuthorizedLayoutExpectation(
+                string hierarchyPath,
+                Vector3 localPosition,
+                Quaternion localRotation,
+                Vector3 localScale,
+                int layer)
+            {
+                HierarchyPath = hierarchyPath;
+                LocalPosition = localPosition;
+                LocalRotation = localRotation;
+                LocalScale = localScale;
+                Layer = layer;
+            }
+
+            public string HierarchyPath { get; private set; }
+            public Vector3 LocalPosition { get; private set; }
+            public Quaternion LocalRotation { get; private set; }
+            public Vector3 LocalScale { get; private set; }
+            public int Layer { get; private set; }
         }
 
         private sealed class ProtectedSceneSnapshot

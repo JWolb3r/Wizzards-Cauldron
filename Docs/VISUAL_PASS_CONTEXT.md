@@ -1,6 +1,6 @@
 # Wizzards Cauldron – Visual Pass Context
 
-Last updated: 2026-08-20 (Europe/Berlin)
+Last updated: 2026-08-29 (Europe/Berlin)
 
 ## Confirmed technical baseline
 
@@ -34,6 +34,10 @@ Last updated: 2026-08-20 (Europe/Berlin)
 - `CauldronLiquidDisplay` listens to `TotalsChanged` and drives only its assigned liquid transform.
 - Visual listeners may react to these events but must not mutate scoring, potion state, capacity, session state, or reset state.
 - Preserve the cauldron body collider, `IntakeTrigger`, `FinishTarget`, `WandTip`, interactive roots, reset tracking lists, and all saved references.
+- Joel explicitly authorized a target-scene-only puzzle extension on 2026-08-29. Five project-owned definitions were added: Blue `2/1`, Violet `5/3`, Cyan `7/4`, Orange `4/2`, and Magenta `9/5` (`health/fill`).
+- `SO_PuzzleVisualExpanded.asset` contains the original three and the five new definitions, capacity `8`, and target health `15`. The unique optimal combination is Blue + Orange + Magenta (`15` health, `8` fill).
+- Only the copied visual scene points `GameSessionController` to the expanded puzzle. Its `RoomResetCoordinator` tracks all eight potion instances and nine physics-reset objects (eight potions plus the wand). Runtime gameplay scripts, the protected source scene, and the shared potion prefab remain unchanged.
+- Four non-trigger table collision volumes are an expressly authorized target-scene exception: the main workbench body, central surface, new front worktop, and left potion-table body. They block virtual locomotion and physics objects; all decorative visual subtrees remain collider-free.
 
 ## Alex model source and status
 
@@ -49,7 +53,7 @@ Last updated: 2026-08-20 (Europe/Berlin)
 | --- | --- | --- |
 | Cauldron | `Assets/WizzardsCauldron/Art/Models/Alex/cauldron_1.fbx` | 2026-08-15 16:30:14, 255,568 bytes. Final candidate per Joel. The centered pivot is retained. The project-owned wrapper now uses `-90° X`: this makes the FBX axis vertical and places its authored feet below the rim; the earlier `+90°` wrapper was upright on its axis but visually upside down. Five declared material records; polygon faces use slots 0–1. Source FBX unchanged. |
 | Wand | `Assets/WizzardsCauldron/Art/Models/Alex/wand_1.fbx` | 2026-08-15 16:39:16, 90,752 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Three declared material records; polygon faces use slots 0–1. Keep the existing interactive wand root and `WandTip`. |
-| Potion bottle | `Assets/WizzardsCauldron/Art/Models/Alex/bottle_1.fbx` | 2026-08-15 16:24:40, 287,696 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Eleven declared material records; polygon faces use slots 0–2. Keep `PF_PotionBottle` as the interactive root. |
+| Potion bottle | `Assets/WizzardsCauldron/Art/Models/Alex/bottle_1.fbx` | 2026-08-15 16:24:40, 287,696 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Eleven declared material records; polygon faces use slots 0–2. `PF_PotionBottle` remains the unchanged interactive root for all eight gameplay bottles. |
 | Shelf and table | `Assets/WizzardsCauldron/Art/Models/Alex/shelf_and_table_!.fbx` | 2026-08-15 16:32:34, 67,456 bytes. Latest candidate; original filename preserved. Geometry and normals valid; UV0 is not usable. Its `-87.500008°` geometric X-axis is compensated with `+87.500008°` only on the project-owned wrapper `VisualPivot`. Two declared material records and both polygon slots are used. Built orientation verified upright. |
 | Reset button | `Assets/WizzardsCauldron/Art/Models/Alex/reset_button.fbx` | 2026-08-15 16:41:30, 115,040 bytes. Latest candidate. Geometry and normals valid; UV0 is not usable. Four declared material records; polygon faces use slots 0–1. Preserve `PF_ResetControl`, its interaction volume, and reset reference. |
 
@@ -76,6 +80,7 @@ Third-party contents are read-only sources. Create project-owned wrappers and ma
 - Third-party demo-scene reference issues listed above do not affect the project-owned interaction scene or the usable prefabs.
 - The first sandboxed batch launches could not reach Unity Licensing. A narrowly approved Unity launch succeeded and produced a clean compile.
 - Git branch: `joel_visuals`. Asset Store imports and setup files are currently uncommitted. Preserve the baseline commit `e85e473` and do not reset team changes.
+- The expanded potion assets, target-scene references, table colliders, additional worktop, and ceiling are also currently uncommitted; create a recovery commit before unrelated follow-up work.
 
 ## Performance requirements for the visual pass
 
@@ -90,22 +95,25 @@ Third-party contents are read-only sources. Create project-owned wrappers and ma
 
 ## Remaining manual tasks
 
-- Open and visually inspect the completed target scene in the Unity Editor.
-- Run the full grab, potion, finish, result, and reset loop in Play Mode.
+- Open and visually inspect the completed target scene in the Unity Editor, including the new front worktop and coffered dark-stone ceiling.
+- Confirm that all eight bottles are visible and grabbable and that the five new colors show values `2/1`, `5/3`, `7/4`, `4/2`, and `9/5`.
+- Run Blue + Orange + Magenta, finish the attempt, verify `15` health at `8/8` capacity, and confirm Reset restores all eight bottles.
+- Use controller locomotion to walk into the workbench from the front and side; the avatar should stop at the table collision instead of passing through it.
 - Test the Android build on Meta Quest Standalone for scale, comfort, controller alignment, readability, portal/VFX behavior, and stable frame rate.
 - Profile on the headset and reduce particles or post-processing further only if the device measurement requires it.
 
 ## Validation status
 
-- Final compile/build: successful on 2026-08-20 19:42 CEST, return code `0`, no C# errors or warnings; `Logs/VisualPassBuild-fullwall-uvfinal.log`.
+- Final compile/build and repeatability run: successful on 2026-08-29, return code `0`, no C# errors or warnings; `Logs/VisualPassBuild_Idempotence_ExpandedFinal.log`.
 - Visual builder safety gate confirmed 121 protected serialized components and 59 protected poses before generating content.
-- Final visual validator: 38 checks passed, 0 warnings, 0 errors; `Logs/VisualPassValidation-fullwall-final.log`.
-- Missing-script scan: none in the 266 target-scene GameObjects.
+- Final visual validator: 42 checks passed, 0 warnings, 0 errors; `Logs/VisualPassValidation_ExpandedFinal2.log`.
+- Expanded gameplay validation: five unique additional PotionControllers, eight total potion instances, nine reset physics entries, the capacity-eight puzzle, and all four table collision volumes passed.
+- Missing-script scan: none in the 341 target-scene GameObjects.
 - Protected-state comparison: 121 serialized components and 59 protected poses match the source, covering 16 colliders, 4 rigidbodies, 80 XR components, and 21 gameplay/controller components.
 - Performance validation: 4/4 realtime-light budget, no small realtime shadows, all particle systems at or below 48 particles, total configured maximum 122/128, and no particle colliders.
 - Quest Performance configuration is intentionally unchanged: additional lights and HDR remain disabled. The target therefore uses a warm directional/ambient fallback and LDR-safe Bloom threshold `0.5`.
-- EditMode tests: 12/12 passed, 0 failed; `Logs/VisualPassEditMode-fullwall-final.xml`.
-- Automated desktop previews: `Logs/VisualPassPreviews/`.
+- EditMode tests: 13/13 passed, 0 failed; `Logs/VisualPassEditMode_ExpandedFinal.xml`. The added test exhaustively confirms the unique expanded-puzzle optimum.
+- Six automated desktop previews, including potion layout and ceiling: `Logs/VisualPassPreviews/`.
 - Protected source SHA-256 remains `2A13B8401B8C493386575CBBB09E09BA43F1BCFBEEE3C7420D7EB106A638B0BC`.
 - Shared gameplay prefabs remain byte-identical to the pre-pass hashes. No Asset Store original or Alex FBX was edited.
 - Final manual Editor Play Mode and Meta Quest device tests are still required.

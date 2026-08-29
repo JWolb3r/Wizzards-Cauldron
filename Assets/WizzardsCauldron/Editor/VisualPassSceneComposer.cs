@@ -55,12 +55,21 @@ namespace WizzardsCauldron.EditorTools
 
         internal static void Compose(
             Scene scene,
-            VisualPassAssets assets)
+            VisualPassAssets assets,
+            VisualPassGameplayExtensionData gameplayData)
         {
             if (assets == null)
             {
                 throw new ArgumentNullException(nameof(assets));
             }
+            if (gameplayData == null)
+            {
+                throw new ArgumentNullException(nameof(gameplayData));
+            }
+
+            VisualPassGameplayExtension.Compose(
+                scene,
+                gameplayData);
 
             SceneReferences references =
                 FindAndValidateGameplayReferences(scene);
@@ -144,10 +153,10 @@ namespace WizzardsCauldron.EditorTools
                     .ToArray()
             };
 
-            if (result.Potions.Length != 3)
+            if (result.Potions.Length != 8)
             {
                 throw new InvalidOperationException(
-                    "Expected exactly three existing PotionController " +
+                    "Expected exactly eight PotionController " +
                     "instances, found " + result.Potions.Length + ".");
             }
 
@@ -503,8 +512,15 @@ namespace WizzardsCauldron.EditorTools
                 renderer.enabled = false;
             }
 
-            DisableRenderersUnderNamedVisual(
-                references.ResetRoot.transform);
+            // The protected reset prefab consists of its interaction volume
+            // and status canvas and intentionally has no placeholder named
+            // Visual. If a later prefab revision adds one, hide only its
+            // renderers while leaving every collider and UI component intact.
+            if (FindDirectChild(references.ResetRoot.transform, "Visual") != null)
+            {
+                DisableRenderersUnderNamedVisual(
+                    references.ResetRoot.transform);
+            }
             GameObject resetVisual = InstantiateWrapper(
                 assets.ResetWrapperPrefab,
                 references.ResetRoot.transform,
@@ -781,6 +797,20 @@ namespace WizzardsCauldron.EditorTools
                 true);
             CreateCube(
                 parent,
+                "ExpandedPotionWorktopFront",
+                new Vector3(-0.36f, 0.8f, 0.64f),
+                new Vector3(0.92f, 0.09f, 0.24f),
+                assets.WarmWood,
+                true);
+            CreateCube(
+                parent,
+                "ExpandedPotionWorktopFrontTrim",
+                new Vector3(-0.36f, 0.812f, 0.512f),
+                new Vector3(0.94f, 0.025f, 0.025f),
+                assets.Gold,
+                true);
+            CreateCube(
+                parent,
                 "CentralAlchemyWorktopBridge",
                 new Vector3(0.2f, 0.8f, 0.745f),
                 new Vector3(0.52f, 0.09f, 0.09f),
@@ -889,72 +919,49 @@ namespace WizzardsCauldron.EditorTools
 
             CreateCube(
                 parent,
-                "PotionSamplerTrayBase",
-                new Vector3(-1.49f, 1.06f, 1f),
-                new Vector3(0.54f, 0.025f, 0.34f),
-                assets.BlackIron,
-                true);
-            CreateCube(
-                parent,
-                "PotionSamplerTrayFrontRim",
-                new Vector3(-1.49f, 1.082f, 0.84f),
-                new Vector3(0.55f, 0.025f, 0.018f),
-                assets.Gold,
-                true);
-            CreateCube(
-                parent,
-                "PotionSamplerTrayBackRim",
-                new Vector3(-1.49f, 1.082f, 1.16f),
-                new Vector3(0.55f, 0.025f, 0.018f),
+                "PotionSamplerTableFrontTrim",
+                new Vector3(-1.49f, 1.018f, 0.785f),
+                new Vector3(0.63f, 0.025f, 0.025f),
                 assets.Gold,
                 true);
 
-            CreateDecorativePotionVariant(
-                assets.PotionWrapperPrefab,
-                parent,
-                "PotionSample_LifeDominant",
-                assets.GlassRed,
-                assets.OrangeEmission,
-                assets,
-                new Vector3(-1.68f, 1.09f, 1.02f));
-            CreateDecorativePotionVariant(
-                assets.PotionWrapperPrefab,
-                parent,
-                "PotionSample_LifePoisonBalanced",
-                assets.GlassViolet,
-                assets.CyanEmission,
-                assets,
-                new Vector3(-1.49f, 1.09f, 1.02f));
-            CreateDecorativePotionVariant(
-                assets.PotionWrapperPrefab,
-                parent,
-                "PotionSample_PoisonDominant",
-                assets.GlassGreen,
-                assets.VioletEmission,
-                assets,
-                new Vector3(-1.3f, 1.09f, 1.02f));
-
-            CreatePotionRatioMarker(
-                parent,
-                "LifeDominantRatio",
-                new Vector3(-1.68f, 1.082f, 0.865f),
-                0.052f,
-                0.018f,
-                assets);
-            CreatePotionRatioMarker(
-                parent,
-                "BalancedRatio",
-                new Vector3(-1.49f, 1.082f, 0.865f),
-                0.035f,
-                0.035f,
-                assets);
-            CreatePotionRatioMarker(
-                parent,
-                "PoisonDominantRatio",
-                new Vector3(-1.3f, 1.082f, 0.865f),
-                0.018f,
-                0.052f,
-                assets);
+            Vector3[] highPotionDocks =
+            {
+                new Vector3(-1.68f, 1.047f, 1.02f),
+                new Vector3(-1.49f, 1.047f, 1.02f),
+                new Vector3(-1.3f, 1.047f, 1.02f)
+            };
+            Vector3[] lowPotionDocks =
+            {
+                new Vector3(-0.58f, 0.847f, 0.64f),
+                new Vector3(-0.3f, 0.847f, 0.64f)
+            };
+            Vector3[] allPotionDocks = highPotionDocks
+                .Concat(lowPotionDocks)
+                .ToArray();
+            for (int index = 0; index < allPotionDocks.Length; index++)
+            {
+                CreateMeshVisual(
+                    parent,
+                    "PotionDock_" + (index + 1),
+                    assets.DiscMesh,
+                    assets.BlackIron,
+                    allPotionDocks[index],
+                    Quaternion.Euler(90f, 0f, 0f),
+                    new Vector3(0.105f, 0.105f, 0.105f),
+                    true,
+                    false);
+                CreateMeshVisual(
+                    parent,
+                    "PotionDockGoldRing_" + (index + 1),
+                    assets.RingMesh,
+                    assets.Gold,
+                    allPotionDocks[index] + new Vector3(0f, 0.001f, 0f),
+                    Quaternion.Euler(90f, 0f, 0f),
+                    new Vector3(0.105f, 0.105f, 0.105f),
+                    true,
+                    false);
+            }
         }
 
         private static void CreatePotionRatioMarker(
@@ -1809,6 +1816,22 @@ namespace WizzardsCauldron.EditorTools
             {
                 glass = assets.GlassYellow;
             }
+            else if (stableId.IndexOf("violet", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                glass = assets.GlassViolet;
+            }
+            else if (stableId.IndexOf("cyan", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                glass = assets.GlassCyan;
+            }
+            else if (stableId.IndexOf("orange", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                glass = assets.GlassOrange;
+            }
+            else if (stableId.IndexOf("magenta", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                glass = assets.GlassMagenta;
+            }
 
             AssignMaterialSequence(visual, glass, assets.Cork, assets.Label);
         }
@@ -1856,13 +1879,6 @@ namespace WizzardsCauldron.EditorTools
             }
 
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                throw new InvalidOperationException(
-                    "Protected Visual child under " + gameplayRoot.name +
-                    " has no renderer.");
-            }
-
             foreach (Renderer renderer in renderers)
             {
                 renderer.enabled = false;

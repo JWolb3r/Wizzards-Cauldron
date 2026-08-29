@@ -32,6 +32,78 @@ namespace WizzardsCauldron.Tests.EditMode
         }
 
         [Test]
+        public void Solve_ExpandedVisualPuzzle_ReturnsUniqueOptimum()
+        {
+            var items = new[]
+            {
+                new KnapsackItem("red", 1, 2),
+                new KnapsackItem("green", 2, 2),
+                new KnapsackItem("yellow", 3, 2),
+                new KnapsackItem("blue", 2, 1),
+                new KnapsackItem("violet", 5, 3),
+                new KnapsackItem("cyan", 7, 4),
+                new KnapsackItem("orange", 4, 2),
+                new KnapsackItem("magenta", 9, 5)
+            };
+
+            PuzzleSolution result =
+                PuzzleSolver.Solve(8, items);
+
+            Assert.That(
+                result.MaximumHealth,
+                Is.EqualTo(15));
+            Assert.That(
+                result.UsedCapacity,
+                Is.EqualTo(8));
+            CollectionAssert.AreEqual(
+                new[] { "blue", "orange", "magenta" },
+                result.SelectedPotionIds);
+
+            int bestHealth = -1;
+            int bestCombinationCount = 0;
+            int combinationCount = 1 << items.Length;
+
+            for (int mask = 0;
+                 mask < combinationCount;
+                 mask++)
+            {
+                int health = 0;
+                int fill = 0;
+
+                for (int itemIndex = 0;
+                     itemIndex < items.Length;
+                     itemIndex++)
+                {
+                    if ((mask & (1 << itemIndex)) == 0)
+                    {
+                        continue;
+                    }
+
+                    health += items[itemIndex].HealthValue;
+                    fill += items[itemIndex].FillValue;
+                }
+
+                if (fill > 8)
+                {
+                    continue;
+                }
+
+                if (health > bestHealth)
+                {
+                    bestHealth = health;
+                    bestCombinationCount = 1;
+                }
+                else if (health == bestHealth)
+                {
+                    bestCombinationCount++;
+                }
+            }
+
+            Assert.That(bestHealth, Is.EqualTo(15));
+            Assert.That(bestCombinationCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void Solve_ExactFit_SelectsItem()
         {
             var items = new[]

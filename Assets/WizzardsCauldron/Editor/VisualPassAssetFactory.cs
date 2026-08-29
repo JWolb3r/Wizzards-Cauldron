@@ -29,6 +29,9 @@ namespace WizzardsCauldron.EditorTools
         internal Material GlassYellow { get; }
         internal Material GlassBlue { get; }
         internal Material GlassViolet { get; }
+        internal Material GlassCyan { get; }
+        internal Material GlassOrange { get; }
+        internal Material GlassMagenta { get; }
         internal Material Cork { get; }
         internal Material Label { get; }
         internal Material FireParticle { get; }
@@ -62,6 +65,9 @@ namespace WizzardsCauldron.EditorTools
             Material glassYellow,
             Material glassBlue,
             Material glassViolet,
+            Material glassCyan,
+            Material glassOrange,
+            Material glassMagenta,
             Material cork,
             Material label,
             Material fireParticle,
@@ -94,6 +100,9 @@ namespace WizzardsCauldron.EditorTools
             GlassYellow = glassYellow;
             GlassBlue = glassBlue;
             GlassViolet = glassViolet;
+            GlassCyan = glassCyan;
+            GlassOrange = glassOrange;
+            GlassMagenta = glassMagenta;
             Cork = cork;
             Label = label;
             FireParticle = fireParticle;
@@ -356,6 +365,18 @@ namespace WizzardsCauldron.EditorTools
                 litShader,
                 "MAT_VP_GlassViolet.mat",
                 new Color(0.52f, 0.1f, 0.74f, 0.34f));
+            Material glassCyan = BuildGlassMaterial(
+                litShader,
+                "MAT_VP_GlassCyan.mat",
+                new Color(0.03f, 0.78f, 0.86f, 0.34f));
+            Material glassOrange = BuildGlassMaterial(
+                litShader,
+                "MAT_VP_GlassOrange.mat",
+                new Color(0.96f, 0.26f, 0.035f, 0.34f));
+            Material glassMagenta = BuildGlassMaterial(
+                litShader,
+                "MAT_VP_GlassMagenta.mat",
+                new Color(0.9f, 0.04f, 0.4f, 0.34f));
 
             Material cork = UpsertMaterial(
                 MaterialsFolder + "/MAT_VP_Cork.mat",
@@ -514,6 +535,9 @@ namespace WizzardsCauldron.EditorTools
                     glassYellow,
                     glassBlue,
                     glassViolet,
+                    glassCyan,
+                    glassOrange,
+                    glassMagenta,
                     cork,
                     label,
                     fireParticle,

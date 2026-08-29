@@ -1,6 +1,6 @@
 # Wizzards Cauldron – Visual Pass Report
 
-Date: 2026-08-20 (Europe/Berlin)
+Date: 2026-08-29 (Europe/Berlin)
 
 ## Result
 
@@ -12,7 +12,7 @@ The protected functional source scene remains unchanged at SHA-256:
 
 `2A13B8401B8C493386575CBBB09E09BA43F1BCFBEEE3C7420D7EB106A638B0BC`
 
-No gameplay rule, potion evaluation, XR input logic, interaction collider, grab point, Asset Store original, or Alex FBX was edited.
+No Runtime gameplay script, potion-evaluation algorithm, XR input logic, existing interaction collider, grab point, Asset Store original, or Alex FBX was edited. At Joel's explicit request, only the copied visual scene now uses an expanded project-owned puzzle asset, five additional unchanged potion-prefab instances, extended reset references, and four project-owned table collision volumes.
 
 ## Main changed and generated files
 
@@ -21,11 +21,15 @@ No gameplay rule, potion evaluation, XR input logic, interaction collider, grab 
 - Repeatable builder: `Assets/WizzardsCauldron/Editor/VisualPassBuilder.cs`
 - Asset factory: `Assets/WizzardsCauldron/Editor/VisualPassAssetFactory.cs`
 - Scene composer: `Assets/WizzardsCauldron/Editor/VisualPassSceneComposer.cs`
+- Target-scene gameplay extension: `Assets/WizzardsCauldron/Editor/VisualPassGameplayExtension.cs`
 - Validator: `Assets/WizzardsCauldron/Editor/VisualPassValidator.cs`
 - Preview capture: `Assets/WizzardsCauldron/Editor/VisualPassPreviewCapture.cs`
 - Runtime feedback: `Assets/WizzardsCauldron/Scripts/Presentation/VisualFeedbackController.cs`
 - Portal animation: `Assets/WizzardsCauldron/Scripts/Presentation/AstralPortalAnimator.cs`
 - Generated project assets under `Assets/WizzardsCauldron/Art/` and project-owned prefabs under `Assets/WizzardsCauldron/Prefabs/Visual/` and `Prefabs/Environment/`.
+- New potion definitions: `SO_PotionBlue`, `SO_PotionViolet`, `SO_PotionCyan`, `SO_PotionOrange`, and `SO_PotionMagenta` under `Assets/WizzardsCauldron/Data/Potions/`.
+- Expanded target puzzle: `Assets/WizzardsCauldron/Data/Puzzles/SO_PuzzleVisualExpanded.asset`.
+- Expanded-puzzle test: `Assets/WizzardsCauldron/Tests/EditMode/PuzzleSolverTests.cs`.
 
 The builder is available at:
 
@@ -36,19 +40,20 @@ It recreates only project-owned visual content in the dedicated target scene, ve
 ## Room and architecture
 
 - Existing floor and three wall renderers use project-owned URP dark-stone/floor materials in the visual scene only; their original BoxColliders remain intact.
-- Added collider-free stone base trim, upper cornices, two rear observatory columns, an open-roof wooden back beam, and a cyan floor alchemy ring.
-- The ceiling remains open. The former empty front side is now visually replaced edge-to-edge by a collider-free astral portal wall, with no sill, posts, beam, or circular architectural frame and therefore no new movement obstacle.
+- Added collider-free stone base trim, upper cornices, two rear observatory columns, warm wooden beams, and a cyan floor alchemy ring.
+- The room now has a collider-free dark-stone coffered ceiling at wall height, with low-cost warm-wood cross/length beams and one restrained violet rune. Its static opaque geometry adds no realtime light or shadow cost.
+- The former empty front side is visually replaced edge-to-edge by a collider-free astral portal wall, with no sill, posts, beam, or circular architectural frame and therefore no new movement obstacle.
 - The selected `FS017_Night` panoramic sky provides a static moonlit astral exterior without motion.
 - Decorative geometry is static where safe and creates no invisible navigation obstacles.
 
 ## Materials
 
-Twenty-three project-owned `MAT_VP_*` materials were generated:
+Twenty-six project-owned `MAT_VP_*` materials were generated:
 
 - Architecture: DarkStone, FloorStone, StoneTrim, WarmWood.
 - Metal and props: BlackIron, Gold, Cork, Label.
 - Magic: CyanEmission, VioletEmission, OrangeEmission, PortalCore, Liquid.
-- Bottles: GlassRed, GlassGreen, GlassYellow, GlassBlue, GlassViolet.
+- Bottles: GlassRed, GlassGreen, GlassYellow, GlassBlue, GlassViolet, GlassCyan, GlassOrange, GlassMagenta.
 - VFX: FireParticle, PortalParticle, MagicCircleRuneParticle, MagicCircleRingParticle.
 - Sky: AstralNightSky.
 
@@ -62,7 +67,7 @@ All five final candidates are integrated; no placeholder remains:
 | --- | --- | --- |
 | Cauldron | `PF_VP_AlexCauldronVisual` | Collider-free child under the existing Cauldron gameplay root; the neutral wrapper pivot uses `-90° X` so the FBX axis is vertical and the authored feet are below the rim. The previous `+90°` variant was vertically aligned but upside down. Black iron and cyan rune treatment. |
 | Wand | `PF_VP_AlexWandVisual` | Collider-free child under the existing grabbable wand root; existing `Visual` collider and `WandTip` remain active. |
-| Potion bottle | `PF_VP_AlexPotionVisual` | Three colored instances under the existing potion roots; visual orientation corrected at the neutral pivot, existing capsule colliders preserved. |
+| Potion bottle | `PF_VP_AlexPotionVisual` | Eight interactive colored instances: the original three plus five target-scene additions. Every bottle keeps the unchanged `PF_PotionBottle` gameplay root and capsule collider; only its neutral Alex visual pivot and project-owned color material differ. |
 | Shelf/table | `PF_VP_AlexFurnitureVisual` | One combined upright visual under the neutral `Placeholders` host; the FBX geometric X-axis is compensated by `+87.500008°` only on the wrapper pivot; both original shelf/table BoxColliders remain unchanged. |
 | Reset button | `PF_VP_AlexResetVisual` | Visual child under the existing reset root; interaction volume and status canvas preserved. |
 
@@ -86,7 +91,8 @@ Each wrapper keeps Alex's source FBX as an unchanged child with its scale/orient
 - Free Game VFX – Magic Circle URP: reduced portal subset and source textures, copied into the project-owned portal wrapper.
 - Fantasy Skybox FREE: only `FS017_Night` is referenced by the project-owned panoramic sky material.
 - Four decorative bottles, two side-wall shelves, two rune plaques, a crystal pedestal, a chest, two back-wall lanterns, and four wall candles complete the room without adding gameplay colliders.
-- Project-owned modular worktop, shelf, legs, and a small stone hearth reinforce the upright furniture silhouette while the original interaction colliders remain untouched.
+- A new front potion worktop and gold trim close the requested central table area. Three new potions stand on the raised left extension and two on the new front worktop; all five positions have matching visual docks.
+- Project-owned modular worktops, shelf, legs, and a small stone hearth reinforce the upright furniture silhouette. Four target-scene-only non-trigger BoxColliders match the main workbench body, central surface, front worktop, and left extension so virtual locomotion and physics objects cannot pass through the table.
 
 ## Lighting and post-processing
 
@@ -112,31 +118,43 @@ The existing `CauldronLiquidDisplay` and its protected `LiquidVisual` transform 
 
 The large primitive renderer on `FinishTarget` is hidden and replaced visually by a small collider-free rune. Its trigger, `WandActivator` reference, position, and gameplay behavior are unchanged.
 
+The visual target scene has a deliberately expanded data set without changing the solver or session code:
+
+- Blue: health `2`, fill `1`
+- Violet: health `5`, fill `3`
+- Cyan: health `7`, fill `4`
+- Orange: health `4`, fill `2`
+- Magenta: health `9`, fill `5`
+- Expanded capacity: `8`; target health: `15`; unique optimal combination: Blue + Orange + Magenta (`15/8`).
+- Reset now restores all eight potion instances and the existing wand. The protected source scene still uses its original puzzle.
+
 ## Quest performance measures
 
 - Four configured realtime/mixed lights total; no non-directional realtime shadows.
 - Quest-readable directional/ambient fallback because Performance URP disables additional lights.
 - LDR-safe restrained Bloom; HDR remains disabled.
 - Every particle system is capped at 48 or fewer particles; total configured maximum is `122/128`, including the four low-density candle flames.
-- No particle, portal, decoration, or Alex visual wrapper has a Collider.
+- No particle, portal, ordinary decoration, or Alex visual wrapper has a Collider. The only added colliders are the four explicitly requested, opaque workbench collision volumes under the project-owned gameplay-extension root.
 - Opaque URP materials are preferred; transparency is limited to bottles and small particles.
 - No distortion, fluid simulation, realtime reflection probe, motion blur, or depth of field.
 - Shared materials, generated meshes, static flags, and GPU instancing are reused where appropriate.
 
 ## Validation and tests
 
-- Final Unity compile/build: success, return code `0`, no C# errors or warnings (`Logs/VisualPassBuild-fullwall-uvfinal.log`).
-- Builder safety gate confirmed all 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild-fullwall-uvfinal.log`).
-- Final validator: `38 OK`, `0 WARN`, `0 ERROR` (`Logs/VisualPassValidation-fullwall-final.log`).
-- Missing scripts: none across 266 target-scene GameObjects.
+- Final Unity compile/build: success, return code `0`, no C# errors or warnings (`Logs/VisualPassBuild_Idempotence_ExpandedFinal.log`).
+- A second consecutive builder run completed successfully without duplicating gameplay objects, confirming repeatability.
+- Builder safety gate confirmed all 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild_Idempotence_ExpandedFinal.log`).
+- Final validator: `42 OK`, `0 WARN`, `0 ERROR` (`Logs/VisualPassValidation_ExpandedFinal2.log`).
+- Expanded-scene checks passed: five additional defined/grabbable/resettable potions, eight total PotionControllers, nine physics reset entries, capacity-eight puzzle, unique optimum, and four non-trigger table collision volumes.
+- Missing scripts: none across 341 target-scene GameObjects.
 - Protected source/target state: identical across 121 serialized protected components and 59 protected object poses.
 - Protected coverage: 16 Colliders, 4 Rigidbodies, 80 XR components, and 21 gameplay/controller components.
 - Shared gameplay prefab hashes remain unchanged:
   - `PF_PotionBottle.prefab`: `AC95364430EE70DC1DE6663189BD4465B38B835DCE4DA7D67A1FFFADC561E917`
-  - `PF_Wand.prefab`: `737192EB226728DAF8E098BD490C9387680A413566D991DED10FC9CB281BC5D1`
+  - `PF_Wand.prefab`: `DDFAC87B506BCCD3F640A2409D5CAAD0B106BBE61C732860F3BC7270B5EEC5BF`
   - `PF_ResetControl.prefab`: `A7C3F5C44186922C80B4E8C35F16F2B028420D3BE1BA4FD634D832E8043AEA88`
-- EditMode tests: `12/12 passed`, `0 failed` (`Logs/VisualPassEditMode-fullwall-final.xml`).
-- Four automated desktop preview images: `Logs/VisualPassPreviews/`.
+- EditMode tests: `13/13 passed`, `0 failed` (`Logs/VisualPassEditMode_ExpandedFinal.xml`). The new exhaustive subset test proves Blue + Orange + Magenta is the only optimal `15/8` result.
+- Six automated desktop preview images: `Logs/VisualPassPreviews/`, including dedicated potion-layout and coffered-ceiling views.
 
 ## Build Settings
 
@@ -148,7 +166,9 @@ The large primitive renderer on `FinishTarget` is hidden and replaced visually b
 
 ## Remaining manual checks
 
-- Unity Editor Play Mode: full grab/potion/finish/result/reset loop and visual event timing.
+- Unity Editor Play Mode: verify all eight bottles are visible/grabbable and show the intended values; then test Blue + Orange + Magenta, finish/result, and Reset restoring all eight.
+- Walk into the table using controller locomotion from the front and side; the rig should stop at the workbench. Physical head movement cannot be prevented by Unity colliders and must be handled by normal guardian/comfort behavior.
+- Look upward and around the full room to confirm the coffered ceiling has no gaps and the five new bottles do not overlap UI, portal, cauldron, or grab space.
 - Confirm world-space UI readability, potion labels, reset feedback, and no decorative overlap from the headset view.
 - Meta Quest Android build: controller alignment, reach/scale, comfort, portal stereo stability, particle overdraw, post-processing, and sustained frame rate.
 - If profiling shows a device-specific issue, tune project-owned visual assets only; gameplay and XR logic remain out of scope.
@@ -156,6 +176,7 @@ The large primitive renderer on `FinishTarget` is hidden and replaced visually b
 ## Known limitations
 
 - Automated still renders do not simulate portal rotation, torch particles, or event-driven feedback.
+- Desktop validation proves the table colliders exist and are non-trigger; actual locomotion response still requires Play Mode and headset confirmation.
 - No physical Quest performance measurement has been completed yet.
 - The source Alex UV limitations prevent conventional detailed texturing on four of the five meshes.
 - Point-light pulses are intentionally optional on the Quest Performance quality tier; rune/material emission remains the guaranteed device-visible feedback.

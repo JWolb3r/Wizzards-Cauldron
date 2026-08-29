@@ -97,12 +97,15 @@ namespace WizzardsCauldron.EditorTools
                 }
             }
 
+            VisualPassGameplayExtensionData gameplayData =
+                VisualPassGameplayExtension.BuildOrUpdateData();
             VisualPassAssets assets =
                 VisualPassAssetFactory.BuildOrUpdate();
 
             VisualPassSceneComposer.Compose(
                 visualScene,
-                assets);
+                assets,
+                gameplayData);
 
             if (!EditorSceneManager.SaveScene(
                 visualScene,
