@@ -40,6 +40,19 @@ namespace WizzardsCauldron.Presentation
                     GetComponent<PotionController>();
             }
 
+            // Alex's bottle is presented through a project-owned visual
+            // wrapper in the dedicated visual scene.  Older scene revisions
+            // serialized the renderer from the original FBX child, so that
+            // reference can legitimately be empty after the wrapper is
+            // installed.  Resolve a suitable child renderer at runtime
+            // rather than disabling the component and losing the used-potion
+            // material swap.
+            if (_bottleRenderer == null)
+            {
+                _bottleRenderer =
+                    FindBottleRenderer();
+            }
+
             if (!CacheMaterials())
             {
                 Debug.LogError(
@@ -49,6 +62,44 @@ namespace WizzardsCauldron.Presentation
 
                 enabled = false;
             }
+        }
+
+        private Renderer FindBottleRenderer()
+        {
+            Renderer fallback = null;
+            Renderer[] renderers =
+                GetComponentsInChildren<Renderer>(true);
+
+            int requiredSlot =
+                Mathf.Max(_glassMaterialSlot, _fluidMaterialSlot);
+
+            foreach (Renderer candidate in renderers)
+            {
+                if (candidate == null ||
+                    candidate is ParticleSystemRenderer)
+                {
+                    continue;
+                }
+
+                Material[] materials = candidate.sharedMaterials;
+                if (materials == null ||
+                    materials.Length <= requiredSlot)
+                {
+                    continue;
+                }
+
+                if (fallback == null)
+                {
+                    fallback = candidate;
+                }
+
+                if (candidate.enabled)
+                {
+                    return candidate;
+                }
+            }
+
+            return fallback;
         }
 
         private void OnEnable()

@@ -74,11 +74,8 @@ namespace WizzardsCauldron.EditorTools
             SceneReferences references =
                 FindAndValidateGameplayReferences(scene);
 
-            ClearPreviousGeneratedObjects(scene, references);
-
-            GameObject generatedRoot = new GameObject(
-                VisualPassBuilder.GeneratedRootName);
-            SceneManager.MoveGameObjectToScene(generatedRoot, scene);
+            GameObject generatedRoot =
+                PrepareGeneratedVisualRoot(scene, references);
 
             Transform architecture = CreateGroup(
                 generatedRoot.transform,
@@ -203,17 +200,54 @@ namespace WizzardsCauldron.EditorTools
             return result;
         }
 
-        private static void ClearPreviousGeneratedObjects(
+        private static GameObject PrepareGeneratedVisualRoot(
             Scene scene,
             SceneReferences references)
         {
-            foreach (GameObject root in scene.GetRootGameObjects())
+            GameObject retainedRoot = null;
+            GameObject[] sceneRoots = scene.GetRootGameObjects();
+            for (int index = 0; index < sceneRoots.Length; index++)
             {
-                if (root.name == VisualPassBuilder.GeneratedRootName)
+                GameObject root = sceneRoots[index];
+                if (root.name != VisualPassBuilder.GeneratedRootName)
                 {
+                    continue;
+                }
+
+                if (retainedRoot == null)
+                {
+                    retainedRoot = root;
+                }
+                else
+                {
+                    // Older interrupted builds could leave more than one
+                    // generated root.  Keep one deterministic host and
+                    // remove only the duplicate project-owned root.
                     UnityEngine.Object.DestroyImmediate(root);
                 }
             }
+
+            if (retainedRoot == null)
+            {
+                retainedRoot = new GameObject(
+                    VisualPassBuilder.GeneratedRootName);
+                SceneManager.MoveGameObjectToScene(retainedRoot, scene);
+            }
+            else
+            {
+                for (int index = retainedRoot.transform.childCount - 1;
+                     index >= 0;
+                     index--)
+                {
+                    UnityEngine.Object.DestroyImmediate(
+                        retainedRoot.transform.GetChild(index).gameObject);
+                }
+            }
+
+            retainedRoot.transform.SetPositionAndRotation(
+                Vector3.zero,
+                Quaternion.identity);
+            retainedRoot.transform.localScale = Vector3.one;
 
             DestroyDirectChildrenNamed(
                 references.Cauldron.transform,
@@ -238,6 +272,8 @@ namespace WizzardsCauldron.EditorTools
                     potion.transform,
                     PotionPivotPrefix);
             }
+
+            return retainedRoot;
         }
 
         private static void StyleExistingRoom(
@@ -337,16 +373,11 @@ namespace WizzardsCauldron.EditorTools
 
             BuildCofferedCeiling(parent, assets);
 
-            CreateMeshVisual(
-                parent,
-                "FloorAlchemyRing",
-                assets.RuneRingMesh,
-                assets.CyanEmission,
-                new Vector3(0.2f, 0.108f, 1.05f),
-                Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(0.62f, 0.62f, 0.62f),
-                false,
-                false);
+            // Keep the floor clear around the player's standing and reach
+            // area.  The portal already provides the single large astral
+            // focal point; a second floor rune reads as an unexplained ring
+            // near the cauldron in VR and can be mistaken for a gameplay
+            // target.  Do not generate a decorative ring here.
         }
 
         private static void BuildCofferedCeiling(
@@ -404,16 +435,9 @@ namespace WizzardsCauldron.EditorTools
                 DisableShadowsRecursively(beam);
             }
 
-            CreateMeshVisual(
-                parent,
-                "CeilingAstralRune",
-                assets.RuneRingMesh,
-                assets.VioletEmission,
-                new Vector3(0f, 2.984f, 1f),
-                Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(0.34f, 0.34f, 0.34f),
-                true,
-                false);
+            // The open ceiling is intentionally quiet.  The portal supplies
+            // the astral/rune language without adding another floating ring
+            // to the player's upper field of view.
         }
 
         private static InteractiveVisuals IntegrateAlexVisuals(
@@ -1066,26 +1090,10 @@ namespace WizzardsCauldron.EditorTools
                 assets,
                 new Vector3(1.55f, 1.42f, 2.15f));
 
-            CreateMeshVisual(
-                parent,
-                "LeftWallRunePlaque",
-                assets.RuneRingMesh,
-                assets.CyanEmission,
-                new Vector3(-1.82f, 2.28f, 0.72f),
-                Quaternion.Euler(0f, 90f, 0f),
-                new Vector3(0.24f, 0.24f, 0.24f),
-                true,
-                false);
-            CreateMeshVisual(
-                parent,
-                "RightWallRunePlaque",
-                assets.RuneRingMesh,
-                assets.VioletEmission,
-                new Vector3(1.82f, 2.3f, 2f),
-                Quaternion.Euler(0f, -90f, 0f),
-                new Vector3(0.24f, 0.24f, 0.24f),
-                true,
-                false);
+            // Keep the side walls readable and reserve cyan/violet emission
+            // for the portal and short-lived feedback pulses.  These two
+            // decorative plaques previously looked like stray rings at the
+            // top corners of the room.
         }
 
         private static LightingVisuals BuildLightingAndPost(
@@ -1681,9 +1689,13 @@ namespace WizzardsCauldron.EditorTools
         {
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = name;
-            cube.transform.SetParent(parent, true);
-            cube.transform.position = position;
-            cube.transform.rotation = Quaternion.identity;
+            // All generated coordinates are authored in the visual-pass
+            // root's local room space.  Using world-space parenting here made
+            // a non-identity leftover group transform turn into a permanent
+            // offset on the next rebuild.
+            cube.transform.SetParent(parent, false);
+            cube.transform.localPosition = position;
+            cube.transform.localRotation = Quaternion.identity;
             cube.transform.localScale = scale;
 
             Collider collider = cube.GetComponent<Collider>();

@@ -540,8 +540,9 @@ namespace WizzardsCauldron.EditorTools
 
             PotionController potion =
                 RequireComponent<PotionController>(instance);
-            RequireComponent<Rigidbody>(instance);
+            Rigidbody rigidbody = RequireComponent<Rigidbody>(instance);
             RequireComponent<PhysicsResettable>(instance);
+            StabilizeAddedPotion(rigidbody);
 
             if (instance.GetComponentInChildren<Collider>(true) == null)
             {
@@ -734,9 +735,10 @@ namespace WizzardsCauldron.EditorTools
                 Quaternion.identity);
             potion.transform.localScale = Vector3.one;
 
-            RequireComponent<Rigidbody>(potion.gameObject);
+            Rigidbody rigidbody = RequireComponent<Rigidbody>(potion.gameObject);
             RequireComponent<PhysicsResettable>(potion.gameObject);
             RequireComponent<PotionInspectionSource>(potion.gameObject);
+            StabilizeAddedPotion(rigidbody);
             if (potion.GetComponentInChildren<Collider>(true) == null)
             {
                 throw new InvalidOperationException(
@@ -750,6 +752,21 @@ namespace WizzardsCauldron.EditorTools
             PrefabUtility.RecordPrefabInstancePropertyModifications(potion);
 
             return potion;
+        }
+
+        private static void StabilizeAddedPotion(Rigidbody rigidbody)
+        {
+            if (rigidbody == null)
+            {
+                throw new ArgumentNullException(nameof(rigidbody));
+            }
+
+            // These five bottles are presentation stock placed on narrow
+            // display surfaces.  Keep their upright presentation while still
+            // leaving them dynamic and throwable when grabbed; only angular
+            // motion is constrained, so the existing XR interaction and
+            // potion gameplay remain intact.
+            rigidbody.constraints = RigidbodyConstraints.FreezeRotation;
         }
 
         private static PhysicsResettable FindExistingWandReset(

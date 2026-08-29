@@ -79,7 +79,11 @@ namespace WizzardsCauldron.EditorTools
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/PotionRed",
-                new Vector3(0.254f, 1.16f, 1f),
+                // This is the approved target-scene pose saved in the latest
+                // visual layout.  The source scene remains at its functional
+                // baseline pose and is intentionally excluded from this
+                // target-only comparison.
+                new Vector3(0.254f, 1.026f, 1f),
                 Quaternion.identity,
                 Vector3.one,
                 0),
@@ -103,7 +107,10 @@ namespace WizzardsCauldron.EditorTools
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/Wand",
-                new Vector3(0.286f, 0.78f, 0.859f),
+                // Preserve the latest target-scene placement from the
+                // approved visual layout; only the child visual wrapper is
+                // changed by the composer.
+                new Vector3(0.286f, 1.232f, -0.021f),
                 new Quaternion(0f, 0f, 0.7071068f, 0.7071068f),
                 Vector3.one,
                 0),
@@ -1347,11 +1354,20 @@ namespace WizzardsCauldron.EditorTools
                     }
                 }
 
-                if (potion.GetComponent<Rigidbody>() == null ||
+                Rigidbody potionRigidbody = potion.GetComponent<Rigidbody>();
+                if (potionRigidbody == null ||
                     potion.GetComponent<PhysicsResettable>() == null)
                 {
                     issues.Add(GetHierarchyPath(potion.transform) +
                                " lost its Rigidbody or PhysicsResettable");
+                }
+                else if ((potionRigidbody.constraints &
+                          RigidbodyConstraints.FreezeRotation) !=
+                         RigidbodyConstraints.FreezeRotation)
+                {
+                    issues.Add(GetHierarchyPath(potion.transform) +
+                               " must keep FreezeRotation so display bottles " +
+                               "remain upright on their narrow worktops");
                 }
 
                 bool hasGrab = potion.GetComponents<Component>()
