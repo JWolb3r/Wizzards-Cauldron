@@ -110,6 +110,24 @@ namespace WizzardsCauldron.Presentation
             }
         }
 
+        private void LateUpdate()
+        {
+            Camera camera = Camera.main;
+            if (_pulseRoot == null || camera == null)
+            {
+                return;
+            }
+
+            Vector3 direction =
+                camera.transform.position - _pulseRoot.position;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                _pulseRoot.rotation = Quaternion.LookRotation(
+                    direction.normalized,
+                    Vector3.up);
+            }
+        }
+
         private void HandleAttemptFinished(AttemptResult _)
         {
             StopFeedback();

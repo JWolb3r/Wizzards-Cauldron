@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,6 +20,9 @@ namespace WizzardsCauldron.EditorTools
     {
         private const string FinishRuneName = "WC_FinishTargetRune";
         private const string ResetRuneName = "WC_ResetRuneButton";
+        private const string ResetWandTriggerName = "WC_ResetWandTrigger";
+        private const string GameplayExtensionRootName =
+            "__WC_GAMEPLAY_EXTENSION__";
 
         private const string CyanMaterialPath =
             "Assets/WizzardsCauldron/Art/Materials/MAT_VP_CyanEmission.mat";
@@ -76,6 +80,66 @@ namespace WizzardsCauldron.EditorTools
                 "[WC_INTERACTION_VISUALS] COMPLETE | fullVisualBuild=false | gameplayCollidersUnchanged=true");
         }
 
+        public static void LogVisibleCyanRenderersBatch()
+        {
+            Scene scene = EditorSceneManager.OpenScene(
+                VisualPassBuilder.VisualScenePath,
+                OpenSceneMode.Single);
+            Material cyan = LoadRequired<Material>(CyanMaterialPath);
+
+            Renderer[] renderers = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<Renderer>(true))
+                .Where(renderer =>
+                    renderer.enabled &&
+                    renderer.sharedMaterials.Contains(cyan))
+                .ToArray();
+
+            foreach (Renderer renderer in renderers)
+            {
+                Debug.Log(
+                    "[WC_CYAN_RENDERER] " +
+                    GetHierarchyPath(renderer.transform) +
+                    " | type=" + renderer.GetType().Name +
+                    " | center=" + renderer.bounds.center.ToString("F3") +
+                    " | size=" + renderer.bounds.size.ToString("F3"));
+            }
+
+            Debug.Log("[WC_CYAN_RENDERER] count=" + renderers.Length);
+
+            Renderer[] controlRenderers = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<Renderer>(true))
+                .Where(renderer =>
+                {
+                    string path = GetHierarchyPath(renderer.transform);
+                    return path.IndexOf(
+                               "Placeholders/ResetControl",
+                               StringComparison.Ordinal) >= 0 ||
+                           path.IndexOf(
+                               "Placeholders/FinishTarget",
+                               StringComparison.Ordinal) >= 0;
+                })
+                .ToArray();
+
+            foreach (Renderer renderer in controlRenderers)
+            {
+                string materials = string.Join(
+                    ",",
+                    renderer.sharedMaterials.Select(material =>
+                        material == null
+                            ? "<null>"
+                            : AssetDatabase.GetAssetPath(material)));
+                Debug.Log(
+                    "[WC_CONTROL_RENDERER] " +
+                    GetHierarchyPath(renderer.transform) +
+                    " | enabled=" + renderer.enabled +
+                    " | center=" + renderer.bounds.center.ToString("F3") +
+                    " | size=" + renderer.bounds.size.ToString("F3") +
+                    " | materials=" + materials);
+            }
+        }
+
         internal static void PolishLoadedScene(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded)
@@ -97,6 +161,8 @@ namespace WizzardsCauldron.EditorTools
             ResetHoldControl resetControl = FindUnique<ResetHoldControl>(scene);
             GameSessionController session =
                 FindUnique<GameSessionController>(scene);
+            RoomResetCoordinator roomReset =
+                FindUnique<RoomResetCoordinator>(scene);
 
             PolishWandTarget(
                 wandActivator,
@@ -111,13 +177,15 @@ namespace WizzardsCauldron.EditorTools
                 particles);
 
             PolishResetButton(
+                scene,
                 resetControl,
-                disc,
+                roomReset,
                 ring,
                 runes,
-                iron,
                 gold,
-                cyan);
+                cyan,
+                violet,
+                particles);
 
             EditorSceneManager.MarkSceneDirty(scene);
         }
@@ -228,13 +296,15 @@ namespace WizzardsCauldron.EditorTools
         }
 
         private static void PolishResetButton(
+            Scene scene,
             ResetHoldControl resetControl,
-            Mesh disc,
+            RoomResetCoordinator roomReset,
             Mesh ring,
             Mesh runes,
-            Material iron,
             Material gold,
-            Material cyan)
+            Material cyan,
+            Material violet,
+            Material particleMaterial)
         {
             Transform resetRoot = resetControl.transform;
             DestroyDirectChild(resetRoot, ResetRuneName);
@@ -261,43 +331,127 @@ namespace WizzardsCauldron.EditorTools
 
             GameObject visual = new GameObject(ResetRuneName);
             visual.transform.position = center;
-            visual.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
             visual.transform.SetParent(resetRoot, true);
 
-            CreateMesh(
-                visual.transform,
-                "IronButtonBase",
-                disc,
-                iron,
-                new Vector3(0.24f, 0.24f, 1f),
-                new Vector3(0f, 0f, 0.018f),
-                Quaternion.identity);
+            Camera sceneCamera = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<Camera>(true))
+                .FirstOrDefault(camera => camera.CompareTag("MainCamera"));
+            Vector3 initialFacingDirection = sceneCamera != null
+                ? sceneCamera.transform.position - center
+                : Vector3.left;
+            visual.transform.rotation = Quaternion.LookRotation(
+                initialFacingDirection.normalized,
+                Vector3.up);
 
-            CreateMesh(
+            Transform outerRune = CreateDoubleSidedMesh(
                 visual.transform,
-                "GoldButtonFrame",
+                "OuterVioletResetRunes",
+                runes,
+                violet,
+                0.24f,
+                0.004f);
+
+            Transform innerRune = CreateDoubleSidedMesh(
+                visual.transform,
+                "InnerGoldResetRing",
                 ring,
                 gold,
-                new Vector3(0.225f, 0.225f, 1f),
-                new Vector3(0f, 0f, 0.012f),
-                Quaternion.identity);
+                0.19f,
+                0f);
 
-            CreateMesh(
+            CreateDoubleSidedMesh(
                 visual.transform,
-                "CyanResetRunes",
+                "CyanResetSigils",
                 runes,
                 cyan,
-                new Vector3(0.17f, 0.17f, 1f),
-                new Vector3(0f, 0f, 0.006f),
-                Quaternion.identity);
+                0.12f,
+                0.008f);
 
             CreateRuneGlyph(
                 visual.transform,
                 "ResetGlyph",
                 gold,
                 cyan,
-                0f,
-                0.075f);
+                0.012f,
+                0.085f);
+
+            ParticleSystem activationParticles = CreateRuneParticles(
+                visual.transform,
+                "ResetRuneSparkBurst",
+                particleMaterial,
+                new Color(0.64f, 0.22f, 1f, 1f),
+                new Color(0.1f, 0.9f, 1f, 1f),
+                20);
+
+            Transform extensionRoot = scene.GetRootGameObjects()
+                .FirstOrDefault(root => string.Equals(
+                    root.name,
+                    GameplayExtensionRootName,
+                    StringComparison.Ordinal))
+                ?.transform;
+            if (extensionRoot == null)
+            {
+                throw new InvalidOperationException(
+                    "The authorized gameplay-extension root is missing.");
+            }
+
+            DestroyDirectChild(extensionRoot, ResetWandTriggerName);
+            GameObject triggerObject = new GameObject(ResetWandTriggerName);
+            triggerObject.transform.position = center;
+            triggerObject.transform.SetParent(extensionRoot, true);
+            SphereCollider wandTrigger =
+                triggerObject.AddComponent<SphereCollider>();
+            wandTrigger.isTrigger = true;
+            wandTrigger.radius = 0.145f;
+
+            TMP_Text statusText = resetRoot
+                .GetComponentsInChildren<TMP_Text>(true)
+                .FirstOrDefault();
+            if (statusText != null)
+            {
+                statusText.text = "Touch rune\nwith wand";
+            }
+
+            Behaviour legacyInteractable = resetRoot
+                .GetComponents<Behaviour>()
+                .FirstOrDefault(component =>
+                    component != null &&
+                    component != resetControl &&
+                    component.GetType().Name.IndexOf(
+                        "Interactable",
+                        StringComparison.OrdinalIgnoreCase) >= 0);
+
+            WandResetActivator activator =
+                triggerObject.AddComponent<WandResetActivator>();
+            SerializedObject serialized = new SerializedObject(activator);
+            SetReference(serialized, "_roomReset", roomReset);
+            SetReference(serialized, "_wandTrigger", wandTrigger);
+            SetReference(
+                serialized,
+                "_legacyHoldControl",
+                resetControl);
+            SetReference(
+                serialized,
+                "_legacyInteractable",
+                legacyInteractable);
+            SetReference(serialized, "_statusText", statusText);
+            SetReference(
+                serialized,
+                "_runeFacingRoot",
+                visual.transform);
+            SetReference(serialized, "_pulseRoot", visual.transform);
+            SetReference(serialized, "_outerRune", outerRune);
+            SetReference(serialized, "_innerRune", innerRune);
+            SetReference(
+                serialized,
+                "_activationParticles",
+                activationParticles);
+            SetReference(
+                serialized,
+                "_activationLight",
+                null);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Transform CreateDoubleSidedMesh(
@@ -378,8 +532,24 @@ namespace WizzardsCauldron.EditorTools
             Transform target,
             Material material)
         {
-            GameObject particlesObject = new GameObject(
-                "WandActivationSparkBurst");
+            return CreateRuneParticles(
+                target,
+                "WandActivationSparkBurst",
+                material,
+                new Color(0.1f, 0.9f, 1f, 1f),
+                new Color(1f, 0.58f, 0.12f, 1f),
+                24);
+        }
+
+        private static ParticleSystem CreateRuneParticles(
+            Transform target,
+            string name,
+            Material material,
+            Color firstColor,
+            Color secondColor,
+            short burstCount)
+        {
+            GameObject particlesObject = new GameObject(name);
             particlesObject.transform.position = target.position;
             particlesObject.transform.rotation = Quaternion.identity;
             particlesObject.transform.SetParent(target, true);
@@ -394,8 +564,8 @@ namespace WizzardsCauldron.EditorTools
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.22f, 0.48f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.018f, 0.04f);
             main.startColor = new ParticleSystem.MinMaxGradient(
-                new Color(0.1f, 0.9f, 1f, 1f),
-                new Color(1f, 0.58f, 0.12f, 1f));
+                firstColor,
+                secondColor);
             main.maxParticles = 28;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.scalingMode = ParticleSystemScalingMode.Shape;
@@ -404,7 +574,7 @@ namespace WizzardsCauldron.EditorTools
             emission.rateOverTime = 0f;
             emission.SetBursts(new[]
             {
-                new ParticleSystem.Burst(0f, 24)
+                new ParticleSystem.Burst(0f, burstCount)
             });
 
             ParticleSystem.ShapeModule shape = particles.shape;
@@ -530,6 +700,19 @@ namespace WizzardsCauldron.EditorTools
             }
 
             property.objectReferenceValue = value;
+        }
+
+        private static string GetHierarchyPath(Transform transform)
+        {
+            string path = transform.name;
+            Transform current = transform.parent;
+            while (current != null)
+            {
+                path = current.name + "/" + path;
+                current = current.parent;
+            }
+
+            return path;
         }
     }
 }
