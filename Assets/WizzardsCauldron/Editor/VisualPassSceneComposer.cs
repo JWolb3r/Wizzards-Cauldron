@@ -121,7 +121,8 @@ namespace WizzardsCauldron.EditorTools
                 assets);
 
             StyleWorldSpaceUi(references, assets);
-            StyleFinishTarget(references, assets);
+            StyleFinishTarget(references);
+            InteractionVisualPolisher.PolishLoadedScene(scene);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log(
@@ -1288,24 +1289,19 @@ namespace WizzardsCauldron.EditorTools
         }
 
         private static void StyleFinishTarget(
-            SceneReferences references,
-            VisualPassAssets assets)
+            SceneReferences references)
         {
             Renderer targetRenderer =
                 references.FinishTarget.GetComponent<Renderer>();
             if (targetRenderer != null)
             {
-                // This small orb is the deliberate visual affordance for the
-                // wand-tip finish trigger. Keep the collider and gameplay root
-                // untouched and style only its renderer.
-                targetRenderer.enabled = true;
-                targetRenderer.sharedMaterial = assets.CyanEmission;
-                targetRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                targetRenderer.receiveShadows = false;
+                // The primitive is only the protected trigger carrier. A
+                // collider-free project rune is added by the interaction
+                // polisher immediately after this step.
+                targetRenderer.enabled = false;
             }
 
-            // Keep the trigger and WandActivator intact. Decorative legacy
-            // ring copies remain removed; only this gameplay target is shown.
+            // Keep the trigger and WandActivator intact.
         }
 
         private static void CreateWallTorch(
