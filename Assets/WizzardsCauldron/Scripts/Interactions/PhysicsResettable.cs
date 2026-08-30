@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace WizzardsCauldron.Interactions
@@ -19,6 +20,7 @@ namespace WizzardsCauldron.Interactions
         private Quaternion _initialLocalRotation;
         private Vector3 _initialLocalScale;
         private bool _initialIsKinematic;
+        private Coroutine _reenableInteractionRoutine;
 
         private void Awake()
         {
@@ -33,11 +35,18 @@ namespace WizzardsCauldron.Interactions
 
         public void RestoreInitialPose()
         {
-            bool interactionWasEnabled =
+            bool interactionShouldBeEnabled =
                 _interactionBehaviour != null &&
-                _interactionBehaviour.enabled;
+                (_interactionBehaviour.enabled ||
+                 _reenableInteractionRoutine != null);
 
-            if (interactionWasEnabled)
+            if (_reenableInteractionRoutine != null)
+            {
+                StopCoroutine(_reenableInteractionRoutine);
+                _reenableInteractionRoutine = null;
+            }
+
+            if (interactionShouldBeEnabled)
             {
                 _interactionBehaviour.enabled = false;
             }
@@ -63,10 +72,26 @@ namespace WizzardsCauldron.Interactions
                 _rigidbody.Sleep();
             }
 
-            if (interactionWasEnabled)
+            if (interactionShouldBeEnabled)
+            {
+                // XR needs one complete frame with the grab component disabled
+                // so a held object is actually released before it becomes
+                // grabbable again at its restored start pose.
+                _reenableInteractionRoutine = StartCoroutine(
+                    ReenableInteractionNextFrame());
+            }
+        }
+
+        private IEnumerator ReenableInteractionNextFrame()
+        {
+            yield return null;
+
+            if (_interactionBehaviour != null)
             {
                 _interactionBehaviour.enabled = true;
             }
+
+            _reenableInteractionRoutine = null;
         }
     }
 }

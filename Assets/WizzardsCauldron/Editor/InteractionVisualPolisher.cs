@@ -138,6 +138,42 @@ namespace WizzardsCauldron.EditorTools
                     " | size=" + renderer.bounds.size.ToString("F3") +
                     " | materials=" + materials);
             }
+
+            Renderer[] nearbyRenderers = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<Renderer>(true))
+                .Where(renderer =>
+                {
+                    if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    {
+                        return false;
+                    }
+
+                    Vector3 center = renderer.bounds.center;
+                    return center.x >= -2.5f && center.x <= 2.5f &&
+                           center.y >= 0.55f && center.y <= 2.25f &&
+                           center.z >= -1.5f && center.z <= 2.1f;
+                })
+                .ToArray();
+
+            foreach (Renderer renderer in nearbyRenderers)
+            {
+                string materials = string.Join(
+                    ",",
+                    renderer.sharedMaterials.Select(material =>
+                        material == null
+                            ? "<null>"
+                            : AssetDatabase.GetAssetPath(material)));
+                Debug.Log(
+                    "[WC_NEARBY_RENDERER] " +
+                    GetHierarchyPath(renderer.transform) +
+                    " | type=" + renderer.GetType().Name +
+                    " | center=" + renderer.bounds.center.ToString("F3") +
+                    " | size=" + renderer.bounds.size.ToString("F3") +
+                    " | materials=" + materials);
+            }
+
+            Debug.Log("[WC_NEARBY_RENDERER] count=" + nearbyRenderers.Length);
         }
 
         internal static void PolishLoadedScene(Scene scene)
@@ -163,6 +199,10 @@ namespace WizzardsCauldron.EditorTools
                 FindUnique<GameSessionController>(scene);
             RoomResetCoordinator roomReset =
                 FindUnique<RoomResetCoordinator>(scene);
+            CauldronController cauldron =
+                FindUnique<CauldronController>(scene);
+
+            AlignCauldronLiquid(cauldron);
 
             PolishWandTarget(
                 wandActivator,
@@ -188,6 +228,43 @@ namespace WizzardsCauldron.EditorTools
                 particles);
 
             EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static void AlignCauldronLiquid(
+            CauldronController cauldron)
+        {
+            Transform liquid = cauldron.transform.Find("LiquidVisual");
+            Transform visualPivot = cauldron.transform.Find(
+                "WC_VisualPivot_AlexCauldron");
+            Renderer alexRenderer = visualPivot == null
+                ? null
+                : visualPivot.GetComponentsInChildren<Renderer>(true)
+                    .FirstOrDefault(renderer => renderer.enabled);
+
+            if (liquid == null || alexRenderer == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not align the cauldron liquid with Alex's visible cauldron.");
+            }
+
+            // The gameplay root intentionally stays untouched. Alex's mesh is
+            // offset by its replaceable VisualPivot, so the original liquid
+            // must follow the visible mesh rather than the protected root.
+            Vector3 worldPosition = liquid.position;
+            worldPosition.x = alexRenderer.bounds.center.x;
+            worldPosition.z = alexRenderer.bounds.center.z;
+            liquid.position = worldPosition;
+
+            float worldDiameter = Mathf.Min(
+                alexRenderer.bounds.size.x,
+                alexRenderer.bounds.size.z) * 0.70f;
+            Vector3 parentScale = liquid.parent.lossyScale;
+            Vector3 localScale = liquid.localScale;
+            localScale.x = worldDiameter /
+                (2f * Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)));
+            localScale.z = worldDiameter /
+                (2f * Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
+            liquid.localScale = localScale;
         }
 
         private static void PolishWandTarget(
