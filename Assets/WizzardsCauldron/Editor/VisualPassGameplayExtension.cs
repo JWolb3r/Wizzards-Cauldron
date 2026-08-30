@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
+using WizzardsCauldron.Presentation;
 using WizzardsCauldron.UI;
 
 namespace WizzardsCauldron.EditorTools
@@ -134,6 +135,8 @@ namespace WizzardsCauldron.EditorTools
             "WorkbenchBridgeSurfaceCollider";
         internal const string FrontRoomBoundaryColliderName =
             "FrontRoomBoundaryCollider";
+        internal const string TrackedSpaceCollisionGuardName =
+            "TrackedSpaceCollisionGuard";
 
         private const string PotionDataFolder =
             "Assets/WizzardsCauldron/Data/Potions";
@@ -398,6 +401,11 @@ namespace WizzardsCauldron.EditorTools
                     new Vector3(4.10f, 3.00f, 0.10f))
             };
 
+            CreateTrackedSpaceCollisionGuard(
+                scene,
+                gameplayRoot.transform,
+                tableColliders);
+
             data.SetComposedSceneState(
                 gameplayRoot,
                 allPotions,
@@ -558,6 +566,8 @@ namespace WizzardsCauldron.EditorTools
 
             PrefabUtility.RecordPrefabInstancePropertyModifications(
                 instance.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(
+                rigidbody);
             PrefabUtility.RecordPrefabInstancePropertyModifications(
                 potion);
 
@@ -749,6 +759,8 @@ namespace WizzardsCauldron.EditorTools
             AssignObjectReference(potion, "_definition", definition);
             PrefabUtility.RecordPrefabInstancePropertyModifications(
                 potion.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(
+                rigidbody);
             PrefabUtility.RecordPrefabInstancePropertyModifications(potion);
 
             return potion;
@@ -869,6 +881,54 @@ namespace WizzardsCauldron.EditorTools
             return collider;
         }
 
+        private static void CreateTrackedSpaceCollisionGuard(
+            Scene scene,
+            Transform parent,
+            BoxCollider[] tableColliders)
+        {
+            GameObject rigRoot = FindUniqueByName(
+                scene,
+                "XR Origin (XR Rig)");
+            Camera headCamera = rigRoot.GetComponentInChildren<Camera>(true);
+            if (headCamera == null)
+            {
+                throw new InvalidOperationException(
+                    "The XR Origin has no tracked Camera child.");
+            }
+
+            Collider wallLeft = RequireComponent<Collider>(
+                FindUniqueByName(scene, "Wall_Left"));
+            Collider wallRight = RequireComponent<Collider>(
+                FindUniqueByName(scene, "Wall_Right"));
+            Collider wallBack = RequireComponent<Collider>(
+                FindUniqueByName(scene, "Wall_Back"));
+
+            var blockers = new Collider[tableColliders.Length + 3];
+            blockers[0] = wallLeft;
+            blockers[1] = wallRight;
+            blockers[2] = wallBack;
+            Array.Copy(
+                tableColliders,
+                0,
+                blockers,
+                3,
+                tableColliders.Length);
+
+            var guardObject = new GameObject(
+                TrackedSpaceCollisionGuardName);
+            guardObject.transform.SetParent(parent, false);
+            guardObject.transform.localPosition = Vector3.zero;
+            guardObject.transform.localRotation = Quaternion.identity;
+            guardObject.transform.localScale = Vector3.one;
+
+            XrTrackedSpaceCollisionGuard guard =
+                guardObject.AddComponent<XrTrackedSpaceCollisionGuard>();
+            guard.Configure(
+                rigRoot.transform,
+                headCamera.transform,
+                blockers);
+        }
+
         private static void AssignObjectReference(
             UnityEngine.Object target,
             string propertyName,
@@ -970,6 +1030,43 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return matches.ToArray();
+        }
+
+        private static GameObject FindUniqueByName(
+            Scene scene,
+            string objectName)
+        {
+            var matches = new List<GameObject>();
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0;
+                 rootIndex < roots.Length;
+                 rootIndex++)
+            {
+                Transform[] transforms = roots[rootIndex]
+                    .GetComponentsInChildren<Transform>(true);
+                for (int transformIndex = 0;
+                     transformIndex < transforms.Length;
+                     transformIndex++)
+                {
+                    if (string.Equals(
+                        transforms[transformIndex].name,
+                        objectName,
+                        StringComparison.Ordinal))
+                    {
+                        matches.Add(transforms[transformIndex].gameObject);
+                    }
+                }
+            }
+
+            if (matches.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    "Expected exactly one GameObject named '" +
+                    objectName + "' in the visual scene, found " +
+                    matches.Count + ".");
+            }
+
+            return matches[0];
         }
 
         private static bool ContainsReference(

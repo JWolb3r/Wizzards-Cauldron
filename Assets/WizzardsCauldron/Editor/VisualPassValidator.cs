@@ -459,6 +459,11 @@ namespace WizzardsCauldron.EditorTools
                 "AstralPortalAnimator",
                 1,
                 report);
+            ValidateNamedComponentCount(
+                sceneComponents,
+                "XrTrackedSpaceCollisionGuard",
+                1,
+                report);
 
             ValidateControllerCounts(sceneRoots, report);
             Transform[] alexWrapperRoots = ValidateAlexWrapperNames(sceneRoots, report);
@@ -1256,17 +1261,34 @@ namespace WizzardsCauldron.EditorTools
                 issues.Add("extension scene root must contain only its Transform");
             }
 
-            PotionController[] extensionPotions = extensionRoot
-                .GetComponentsInChildren<PotionController>(true);
+            PotionController[] extensionPotions = sceneRoots
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .Where(potion =>
+                    potion.Definition != null &&
+                    ExpectedNewPotions.Any(expectation =>
+                        string.Equals(
+                            expectation.StableId,
+                            potion.Definition.StableId,
+                            StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
             PotionInspectionSource[] extensionInspectionSources =
-                extensionRoot.GetComponentsInChildren<
-                    PotionInspectionSource>(true);
-            PhysicsResettable[] extensionResettables = extensionRoot
-                .GetComponentsInChildren<PhysicsResettable>(true);
-            Rigidbody[] extensionRigidbodies = extensionRoot
-                .GetComponentsInChildren<Rigidbody>(true);
-            Component[] extensionComponents = extensionRoot
-                .GetComponentsInChildren<Component>(true);
+                extensionPotions
+                    .Select(potion =>
+                        potion.GetComponent<PotionInspectionSource>())
+                    .Where(source => source != null)
+                    .ToArray();
+            PhysicsResettable[] extensionResettables = extensionPotions
+                .Select(potion => potion.GetComponent<PhysicsResettable>())
+                .Where(resettable => resettable != null)
+                .ToArray();
+            Rigidbody[] extensionRigidbodies = extensionPotions
+                .Select(potion => potion.GetComponent<Rigidbody>())
+                .Where(rigidbody => rigidbody != null)
+                .ToArray();
+            Component[] extensionComponents = extensionPotions
+                .SelectMany(potion => potion.GetComponents<Component>())
+                .ToArray();
             Component[] extensionGrabInteractables = extensionComponents
                 .Where(component =>
                     component != null &&
@@ -1280,35 +1302,35 @@ namespace WizzardsCauldron.EditorTools
             {
                 issues.Add(
                     "expected " + ExpectedNewPotions.Length +
-                    " extension PotionController components, found " +
+                    " added-potion PotionController components, found " +
                     extensionPotions.Length);
             }
             if (extensionResettables.Length != ExpectedNewPotions.Length)
             {
                 issues.Add(
                     "expected " + ExpectedNewPotions.Length +
-                    " extension PhysicsResettable components, found " +
+                    " added-potion PhysicsResettable components, found " +
                     extensionResettables.Length);
             }
             if (extensionInspectionSources.Length != ExpectedNewPotions.Length)
             {
                 issues.Add(
                     "expected " + ExpectedNewPotions.Length +
-                    " extension PotionInspectionSource components, found " +
+                    " added-potion PotionInspectionSource components, found " +
                     extensionInspectionSources.Length);
             }
             if (extensionRigidbodies.Length != ExpectedNewPotions.Length)
             {
                 issues.Add(
                     "expected " + ExpectedNewPotions.Length +
-                    " extension Rigidbody components, found " +
+                    " added-potion Rigidbody components, found " +
                     extensionRigidbodies.Length);
             }
             if (extensionGrabInteractables.Length != ExpectedNewPotions.Length)
             {
                 issues.Add(
                     "expected " + ExpectedNewPotions.Length +
-                    " extension XRGrabInteractable components, found " +
+                    " added-potion XRGrabInteractable components, found " +
                     extensionGrabInteractables.Length);
             }
 
@@ -1467,6 +1489,35 @@ namespace WizzardsCauldron.EditorTools
                     "expected exactly seven target-only collision BoxCollider " +
                     "components, found " +
                     tableColliders.Length);
+            }
+
+            XrTrackedSpaceCollisionGuard[] collisionGuards = extensionRoot
+                .GetComponentsInChildren<XrTrackedSpaceCollisionGuard>(true);
+            if (collisionGuards.Length != 1)
+            {
+                issues.Add(
+                    "expected exactly one tracked-space collision guard, found " +
+                    collisionGuards.Length);
+            }
+            else
+            {
+                XrTrackedSpaceCollisionGuard guard = collisionGuards[0];
+                Collider[] blockers = guard.BlockingColliders;
+                if (guard.RigRoot == null || guard.Head == null)
+                {
+                    issues.Add(
+                        "tracked-space collision guard has missing XR references");
+                }
+                if (blockers == null || blockers.Length != 10 ||
+                    blockers.Any(collider =>
+                        collider == null || collider.isTrigger ||
+                        !collider.enabled) ||
+                    blockers.Distinct().Count() != 10)
+                {
+                    issues.Add(
+                        "tracked-space collision guard must reference the three " +
+                        "room walls and seven enabled structural colliders");
+                }
             }
 
             ValidateExpandedPuzzle(sceneRoots, issues);

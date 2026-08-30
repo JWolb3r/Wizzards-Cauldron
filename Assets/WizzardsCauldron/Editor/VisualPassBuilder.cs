@@ -116,28 +116,13 @@ namespace WizzardsCauldron.EditorTools
                     "Unity could not save the visual target scene.");
             }
 
-            ConfigureBuildSettings();
             AssetDatabase.SaveAssets();
             VerifyProtectedSourceScene();
 
             Debug.Log(
                 "[WC_VISUAL_PASS] BUILD COMPLETE | scene=" +
                 VisualScenePath + " | sourceProtected=true | " +
-                "buildScene=" + VisualScenePath + ".");
-        }
-
-        private static void ConfigureBuildSettings()
-        {
-            EditorBuildSettings.scenes = new[]
-            {
-                new EditorBuildSettingsScene(
-                    VisualScenePath,
-                    true)
-            };
-
-            Debug.Log(
-                "[WC_VISUAL_PASS] Build Settings now contain only the " +
-                "enabled visual target scene.");
+                "buildSettingsUnchanged=true.");
         }
 
         private static void VerifyProtectedSourceScene()

@@ -116,7 +116,7 @@ namespace WizzardsCauldron.EditorTools
                 assets);
 
             StyleWorldSpaceUi(references, assets);
-            StyleFinishTarget(references, assets);
+            StyleFinishTarget(references);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log(
@@ -251,7 +251,9 @@ namespace WizzardsCauldron.EditorTools
 
             DestroyDirectChildrenNamed(
                 references.Cauldron.transform,
-                CauldronPivotName,
+                CauldronPivotName);
+            DestroyDirectChildrenWithPrefix(
+                references.Cauldron.transform,
                 CauldronRuneName);
             DestroyDirectChildrenNamed(
                 references.WandRoot.transform,
@@ -262,7 +264,7 @@ namespace WizzardsCauldron.EditorTools
             DestroyDirectChildrenNamed(
                 references.Placeholders.transform,
                 FurniturePivotName);
-            DestroyDirectChildrenNamed(
+            DestroyDirectChildrenWithPrefix(
                 references.FinishTarget.transform,
                 FinishVisualName);
 
@@ -467,27 +469,9 @@ namespace WizzardsCauldron.EditorTools
                 references.LiquidVisual.GetComponent<Renderer>();
             StyleRenderer(liquidRenderer, assets.Liquid, false);
 
-            Vector3 cauldronPosition =
-                references.Cauldron.transform.position;
-
-            GameObject cauldronRune = CreateMeshVisual(
-                references.Cauldron.transform,
-                CauldronRuneName,
-                assets.RuneRingMesh,
-                assets.CyanEmission,
-                cauldronPosition + new Vector3(0f, 0.18f, 0f),
-                Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(0.215f, 0.215f, 0.215f),
-                false,
-                false);
-            Renderer cauldronRuneRenderer =
-                cauldronRune.GetComponent<Renderer>();
-            if (cauldronRuneRenderer != null)
-            {
-                // The rune is an event accent, not a permanent cyan rim.
-                // VisualFeedbackController enables it only during a pulse.
-                cauldronRuneRenderer.enabled = false;
-            }
+            // Keep feedback around the cauldron particle- and light-based.
+            // Ring meshes read as unexplained blue circles in the headset.
+            Renderer cauldronRuneRenderer = null;
 
             DisableRenderersUnderNamedVisual(
                 references.WandRoot.transform);
@@ -1299,8 +1283,7 @@ namespace WizzardsCauldron.EditorTools
         }
 
         private static void StyleFinishTarget(
-            SceneReferences references,
-            VisualPassAssets assets)
+            SceneReferences references)
         {
             Renderer targetRenderer =
                 references.FinishTarget.GetComponent<Renderer>();
@@ -1311,16 +1294,9 @@ namespace WizzardsCauldron.EditorTools
                 targetRenderer.enabled = false;
             }
 
-            CreateMeshVisual(
-                references.FinishTarget.transform,
-                FinishVisualName,
-                assets.RuneRingMesh,
-                assets.CyanEmission,
-                references.FinishTarget.transform.position,
-                Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(0.13f, 0.13f, 0.13f),
-                false,
-                false);
+            // Keep the trigger and WandActivator intact. The former rune mesh
+            // and its legacy directional copies were the cyan ring beside the
+            // cauldron in play mode, so no permanent target ring is generated.
         }
 
         private static void CreateWallTorch(
