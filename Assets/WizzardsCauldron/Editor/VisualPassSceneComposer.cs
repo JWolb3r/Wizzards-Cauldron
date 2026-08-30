@@ -121,7 +121,7 @@ namespace WizzardsCauldron.EditorTools
                 assets);
 
             StyleWorldSpaceUi(references, assets);
-            StyleFinishTarget(references);
+            StyleFinishTarget(references, assets);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log(
@@ -1288,20 +1288,24 @@ namespace WizzardsCauldron.EditorTools
         }
 
         private static void StyleFinishTarget(
-            SceneReferences references)
+            SceneReferences references,
+            VisualPassAssets assets)
         {
             Renderer targetRenderer =
                 references.FinishTarget.GetComponent<Renderer>();
             if (targetRenderer != null)
             {
-                // Keep the gameplay trigger untouched, but hide the large
-                // primitive sphere that otherwise dominates the VR view.
-                targetRenderer.enabled = false;
+                // This small orb is the deliberate visual affordance for the
+                // wand-tip finish trigger. Keep the collider and gameplay root
+                // untouched and style only its renderer.
+                targetRenderer.enabled = true;
+                targetRenderer.sharedMaterial = assets.CyanEmission;
+                targetRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                targetRenderer.receiveShadows = false;
             }
 
-            // Keep the trigger and WandActivator intact. The former rune mesh
-            // and its legacy directional copies were the cyan ring beside the
-            // cauldron in play mode, so no permanent target ring is generated.
+            // Keep the trigger and WandActivator intact. Decorative legacy
+            // ring copies remain removed; only this gameplay target is shown.
         }
 
         private static void CreateWallTorch(
