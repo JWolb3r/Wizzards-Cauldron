@@ -44,6 +44,10 @@ namespace WizzardsCauldron.Tests.PlayMode
             Assert.That(intakeProxy, Is.Not.Null);
             Assert.That(potions.Length, Is.EqualTo(8));
 
+            Vector3[] resetPositions = potions
+                .Select(potion => potion.transform.position)
+                .ToArray();
+
             ParticleSystem explosion = GameObject.Find(
                     "AcceptedPotionSpark")
                 .GetComponent<ParticleSystem>();
@@ -157,6 +161,29 @@ namespace WizzardsCauldron.Tests.PlayMode
                 Assert.That(
                     presentation.GrabInteractable.enabled,
                     Is.True);
+            }
+
+            for (int frame = 0; frame < 30; frame++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            for (int index = 0; index < potions.Length; index++)
+            {
+                Rigidbody body = potions[index].GetComponent<Rigidbody>();
+                float distance = Vector3.Distance(
+                    resetPositions[index],
+                    potions[index].transform.position);
+                Debug.Log(
+                    "[WC_RESET_STABILITY] " + potions[index].name +
+                    " distance=" + distance.ToString("F3") +
+                    " velocity=" + body.linearVelocity.magnitude.ToString("F3") +
+                    " angular=" + body.angularVelocity.magnitude.ToString("F3"));
+                Assert.That(
+                    distance,
+                    Is.LessThan(0.4f),
+                    potions[index].name +
+                    " moved abnormally after the room reset.");
             }
         }
     }

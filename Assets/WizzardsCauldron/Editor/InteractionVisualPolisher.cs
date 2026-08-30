@@ -176,6 +176,81 @@ namespace WizzardsCauldron.EditorTools
             Debug.Log("[WC_NEARBY_RENDERER] count=" + nearbyRenderers.Length);
         }
 
+        public static void LogPotionPhysicsBatch()
+        {
+            Scene scene = EditorSceneManager.OpenScene(
+                VisualPassBuilder.VisualScenePath,
+                OpenSceneMode.Single);
+            Physics.SyncTransforms();
+
+            Collider[] sceneColliders = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<Collider>(true))
+                .Where(collider =>
+                    collider.enabled &&
+                    collider.gameObject.activeInHierarchy &&
+                    !collider.isTrigger)
+                .ToArray();
+
+            PotionController[] potions = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .OrderBy(potion => potion.name)
+                .ToArray();
+
+            foreach (PotionController potion in potions)
+            {
+                Rigidbody body = potion.GetComponent<Rigidbody>();
+                Collider[] potionColliders = potion
+                    .GetComponentsInChildren<Collider>(true)
+                    .Where(collider =>
+                        collider.enabled &&
+                        !collider.isTrigger)
+                    .ToArray();
+                string contacts = string.Join(
+                    ",",
+                    sceneColliders
+                        .Where(other =>
+                            !other.transform.IsChildOf(potion.transform) &&
+                            potionColliders.Any(own =>
+                                own.bounds.Intersects(other.bounds)))
+                        .Select(other => GetHierarchyPath(other.transform))
+                        .Distinct());
+                string bounds = string.Join(
+                    ";",
+                    potionColliders.Select(collider =>
+                        collider.GetType().Name +
+                        " center=" + collider.bounds.center.ToString("F3") +
+                        " size=" + collider.bounds.size.ToString("F3")));
+                Debug.Log(
+                    "[WC_POTION_PHYSICS] " + potion.name +
+                    " | position=" + potion.transform.position.ToString("F3") +
+                    " | rotation=" + potion.transform.rotation.eulerAngles.ToString("F2") +
+                    " | mass=" + (body == null ? -1f : body.mass) +
+                    " | collision=" +
+                    (body == null ? "<none>" : body.collisionDetectionMode.ToString()) +
+                    " | bounds=" + bounds +
+                    " | touchingBounds=" +
+                    (string.IsNullOrEmpty(contacts) ? "<none>" : contacts));
+            }
+
+            foreach (Collider collider in sceneColliders
+                .Where(collider =>
+                    collider.bounds.max.y >= 0.65f &&
+                    collider.bounds.min.y <= 1.10f &&
+                    collider.bounds.center.z >= 0.45f &&
+                    collider.bounds.center.z <= 1.35f))
+            {
+                Debug.Log(
+                    "[WC_SUPPORT_COLLIDER] " +
+                    GetHierarchyPath(collider.transform) +
+                    " | center=" + collider.bounds.center.ToString("F3") +
+                    " | size=" + collider.bounds.size.ToString("F3") +
+                    " | min=" + collider.bounds.min.ToString("F3") +
+                    " | max=" + collider.bounds.max.ToString("F3"));
+            }
+        }
+
         internal static void PolishLoadedScene(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded)
@@ -203,6 +278,8 @@ namespace WizzardsCauldron.EditorTools
                 FindUnique<CauldronController>(scene);
 
             AlignCauldronLiquid(cauldron);
+            StabilizePotionStartPoses(scene);
+            EnsureAmbientMusic(scene);
 
             PolishWandTarget(
                 wandActivator,
@@ -228,6 +305,63 @@ namespace WizzardsCauldron.EditorTools
                 particles);
 
             EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static void StabilizePotionStartPoses(Scene scene)
+        {
+            PotionController[] potions = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+
+            SetPotionStartPose(
+                potions,
+                "PotionRed",
+                new Vector3(-0.82f, 1.162f, 1.02f));
+            SetPotionStartPose(
+                potions,
+                "PotionGreen",
+                new Vector3(-0.259f, 0.967f, 0.72f));
+        }
+
+        private static void SetPotionStartPose(
+            PotionController[] potions,
+            string potionName,
+            Vector3 localPosition)
+        {
+            PotionController potion = potions.Single(candidate =>
+                string.Equals(
+                    candidate.name,
+                    potionName,
+                    StringComparison.Ordinal));
+            potion.transform.localPosition = localPosition;
+            potion.transform.localRotation = Quaternion.identity;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(
+                potion.transform);
+        }
+
+        private static void EnsureAmbientMusic(Scene scene)
+        {
+            GameObject visualRoot = scene.GetRootGameObjects()
+                .Single(root => string.Equals(
+                    root.name,
+                    "__WC_VISUAL_PASS__",
+                    StringComparison.Ordinal));
+            DestroyDirectChild(
+                visualRoot.transform,
+                "WC_AstralAmbientMusic");
+
+            GameObject musicObject = new GameObject(
+                "WC_AstralAmbientMusic");
+            musicObject.transform.SetParent(visualRoot.transform, false);
+            AudioSource source = musicObject.AddComponent<AudioSource>();
+            source.playOnAwake = true;
+            source.loop = true;
+            source.volume = 0.11f;
+            source.spatialBlend = 0f;
+            source.dopplerLevel = 0f;
+            source.priority = 160;
+            musicObject.AddComponent<AstralAmbientMusic>();
         }
 
         private static void AlignCauldronLiquid(

@@ -1,4 +1,7 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace WizzardsCauldron.Interactions
@@ -21,6 +24,7 @@ namespace WizzardsCauldron.Interactions
         private Vector3 _initialLocalScale;
         private bool _initialIsKinematic;
         private Coroutine _reenableInteractionRoutine;
+        private object[] _selectingInteractors = Array.Empty<object>();
 
         private void Awake()
         {
@@ -35,6 +39,13 @@ namespace WizzardsCauldron.Interactions
 
         public void RestoreInitialPose()
         {
+            object[] selectingInteractors =
+                CaptureSelectingInteractors();
+            if (selectingInteractors.Length > 0)
+            {
+                _selectingInteractors = selectingInteractors;
+            }
+
             bool interactionShouldBeEnabled =
                 _interactionBehaviour != null &&
                 (_interactionBehaviour.enabled ||
@@ -86,12 +97,82 @@ namespace WizzardsCauldron.Interactions
         {
             yield return null;
 
+            // Disabling an XR Grab Interactable cancels the current grab, but
+            // a controller whose select input is still held can immediately
+            // grab it again. Keep the restored object unavailable until the
+            // controller that held it has actually released its input.
+            while (AnyCapturedInteractorStillSelecting())
+            {
+                yield return null;
+            }
+
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.Sleep();
+
             if (_interactionBehaviour != null)
             {
                 _interactionBehaviour.enabled = true;
             }
 
+            _selectingInteractors = Array.Empty<object>();
             _reenableInteractionRoutine = null;
+        }
+
+        private object[] CaptureSelectingInteractors()
+        {
+            if (_interactionBehaviour == null)
+            {
+                return Array.Empty<object>();
+            }
+
+            PropertyInfo property = _interactionBehaviour.GetType()
+                .GetProperty(
+                    "interactorsSelecting",
+                    BindingFlags.Instance | BindingFlags.Public);
+            if (property?.GetValue(_interactionBehaviour) is not
+                IEnumerable interactors)
+            {
+                return Array.Empty<object>();
+            }
+
+            List<object> captured = new List<object>();
+            foreach (object interactor in interactors)
+            {
+                if (interactor != null)
+                {
+                    captured.Add(interactor);
+                }
+            }
+
+            return captured.ToArray();
+        }
+
+        private bool AnyCapturedInteractorStillSelecting()
+        {
+            for (int index = 0;
+                 index < _selectingInteractors.Length;
+                 index++)
+            {
+                object interactor = _selectingInteractors[index];
+                if (interactor == null ||
+                    interactor is UnityEngine.Object unityObject &&
+                    unityObject == null)
+                {
+                    continue;
+                }
+
+                PropertyInfo property = interactor.GetType().GetProperty(
+                    "isSelectActive",
+                    BindingFlags.Instance | BindingFlags.Public);
+                if (property?.GetValue(interactor) is bool isActive &&
+                    isActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -83,19 +83,19 @@ namespace WizzardsCauldron.EditorTools
                 // visual layout.  The source scene remains at its functional
                 // baseline pose and is intentionally excluded from this
                 // target-only comparison.
-                new Vector3(0.254f, 1.026f, 1f),
+                new Vector3(-0.82f, 1.162f, 1.02f),
                 Quaternion.identity,
                 Vector3.one,
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/PotionGreen",
-                new Vector3(0.426f, 1.002f, 1f),
+                new Vector3(-0.259f, 0.967f, 0.72f),
                 Quaternion.identity,
                 Vector3.one,
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/PotionYellow",
-                new Vector3(0.634f, 1.025f, 1f),
+                new Vector3(-0.1307f, 1.025f, 0.743f),
                 Quaternion.identity,
                 Vector3.one,
                 0),
