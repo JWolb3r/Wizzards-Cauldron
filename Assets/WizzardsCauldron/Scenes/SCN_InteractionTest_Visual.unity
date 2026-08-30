@@ -19608,6 +19608,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2050b66d35c9b047948ced338d81f98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!136 &794797419 stripped
+CapsuleCollider:
+  m_CorrespondingSourceObject: {fileID: 8231960464286923361, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
+  m_PrefabInstance: {fileID: 657557273}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &823611318 stripped
+CapsuleCollider:
+  m_CorrespondingSourceObject: {fileID: 8231960464286923361, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
+  m_PrefabInstance: {fileID: 1907869231}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &834057895
 GameObject:
   m_ObjectHideFlags: 0
@@ -27042,6 +27052,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1138017994}
   m_CullTransparentMesh: 1
+--- !u!136 &1140647440 stripped
+CapsuleCollider:
+  m_CorrespondingSourceObject: {fileID: 8231960464286923361, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
+  m_PrefabInstance: {fileID: 1590817473}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1147017366
 GameObject:
   m_ObjectHideFlags: 0
@@ -45450,6 +45465,55 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1645315872}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1655534165
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1655534166}
+  - component: {fileID: 1655534167}
+  m_Layer: 0
+  m_Name: PotionSpawnCollisionExclusion
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1655534166
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1655534165}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1819695960}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1655534167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1655534165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89c4cdd765004c1a91e065d873f0c641, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _excludedSurface: {fileID: 1026900975}
+  _potionColliders:
+  - {fileID: 1140647440}
+  - {fileID: 823611318}
+  - {fileID: 794797419}
 --- !u!1 &1660283689
 GameObject:
   m_ObjectHideFlags: 0
@@ -56403,6 +56467,7 @@ Transform:
   - {fileID: 754853615}
   - {fileID: 1290211481}
   - {fileID: 1204797161}
+  - {fileID: 1655534166}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1842224213

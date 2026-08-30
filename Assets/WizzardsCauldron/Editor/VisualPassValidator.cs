@@ -464,6 +464,11 @@ namespace WizzardsCauldron.EditorTools
                 "XrTrackedSpaceCollisionGuard",
                 1,
                 report);
+            ValidateNamedComponentCount(
+                sceneComponents,
+                "PotionSpawnCollisionExclusion",
+                1,
+                report);
 
             ValidateControllerCounts(sceneRoots, report);
             Transform[] alexWrapperRoots = ValidateAlexWrapperNames(sceneRoots, report);
@@ -1517,6 +1522,53 @@ namespace WizzardsCauldron.EditorTools
                     issues.Add(
                         "tracked-space collision guard must reference the three " +
                         "room walls and seven enabled structural colliders");
+                }
+            }
+
+            PotionSpawnCollisionExclusion[] spawnExclusions = extensionRoot
+                .GetComponentsInChildren<PotionSpawnCollisionExclusion>(true);
+            if (spawnExclusions.Length != 1)
+            {
+                issues.Add(
+                    "expected exactly one potion spawn collision exclusion, " +
+                    "found " + spawnExclusions.Length);
+            }
+            else
+            {
+                PotionSpawnCollisionExclusion exclusion = spawnExclusions[0];
+                Collider excludedSurface = exclusion.ExcludedSurface;
+                Collider[] potionColliders = exclusion.PotionColliders;
+                string[] expectedNames =
+                {
+                    "Potion_Blue",
+                    "Potion_Cyan",
+                    "Potion_Violet"
+                };
+
+                if (excludedSurface == null ||
+                    !string.Equals(
+                        excludedSurface.name,
+                        "PotionShelf",
+                        StringComparison.Ordinal))
+                {
+                    issues.Add(
+                        "potion spawn exclusion must reference PotionShelf");
+                }
+                if (potionColliders == null ||
+                    potionColliders.Length != expectedNames.Length ||
+                    potionColliders.Any(collider =>
+                        collider == null || collider.isTrigger ||
+                        !collider.enabled) ||
+                    potionColliders.Distinct().Count() != expectedNames.Length ||
+                    !potionColliders
+                        .Select(collider => collider.attachedRigidbody)
+                        .All(rigidbody =>
+                            rigidbody != null &&
+                            expectedNames.Contains(rigidbody.name)))
+                {
+                    issues.Add(
+                        "potion spawn exclusion must reference the three " +
+                        "solid Blue, Cyan, and Violet bottle colliders");
                 }
             }
 

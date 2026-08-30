@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -137,6 +138,8 @@ namespace WizzardsCauldron.EditorTools
             "FrontRoomBoundaryCollider";
         internal const string TrackedSpaceCollisionGuardName =
             "TrackedSpaceCollisionGuard";
+        internal const string PotionSpawnCollisionExclusionName =
+            "PotionSpawnCollisionExclusion";
 
         private const string PotionDataFolder =
             "Assets/WizzardsCauldron/Data/Potions";
@@ -405,6 +408,10 @@ namespace WizzardsCauldron.EditorTools
                 scene,
                 gameplayRoot.transform,
                 tableColliders);
+            CreatePotionSpawnCollisionExclusion(
+                scene,
+                gameplayRoot.transform,
+                newPotions);
 
             data.SetComposedSceneState(
                 gameplayRoot,
@@ -927,6 +934,44 @@ namespace WizzardsCauldron.EditorTools
                 rigRoot.transform,
                 headCamera.transform,
                 blockers);
+        }
+
+        private static void CreatePotionSpawnCollisionExclusion(
+            Scene scene,
+            Transform parent,
+            PotionController[] newPotions)
+        {
+            Collider excludedSurface = RequireComponent<Collider>(
+                FindUniqueByName(scene, "PotionShelf"));
+
+            string[] affectedPotionNames =
+            {
+                "Potion_Blue",
+                "Potion_Cyan",
+                "Potion_Violet"
+            };
+            Collider[] potionColliders = affectedPotionNames
+                .Select(name => newPotions.Single(potion =>
+                    string.Equals(
+                        potion.name,
+                        name,
+                        StringComparison.Ordinal)))
+                .Select(potion => potion
+                    .GetComponentsInChildren<Collider>(true)
+                    .Single(collider =>
+                        collider.enabled && !collider.isTrigger))
+                .ToArray();
+
+            var exclusionObject = new GameObject(
+                PotionSpawnCollisionExclusionName);
+            exclusionObject.transform.SetParent(parent, false);
+            exclusionObject.transform.localPosition = Vector3.zero;
+            exclusionObject.transform.localRotation = Quaternion.identity;
+            exclusionObject.transform.localScale = Vector3.one;
+
+            PotionSpawnCollisionExclusion exclusion =
+                exclusionObject.AddComponent<PotionSpawnCollisionExclusion>();
+            exclusion.Configure(excludedSurface, potionColliders);
         }
 
         private static void AssignObjectReference(
