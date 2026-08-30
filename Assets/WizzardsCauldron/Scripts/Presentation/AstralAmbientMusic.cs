@@ -24,6 +24,7 @@ namespace WizzardsCauldron.Presentation
             _source.playOnAwake = true;
             _source.spatialBlend = 0f;
             _source.dopplerLevel = 0f;
+            _source.mute = false;
 
             if (_sharedClip == null)
             {

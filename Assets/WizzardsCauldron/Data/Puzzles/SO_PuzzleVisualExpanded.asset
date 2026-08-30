@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cauldronCapacity: 8
   _potions:
-  - {fileID: 11400000, guid: 47506bf2cd0996343a9452ca720edb95, type: 2}
   - {fileID: 11400000, guid: 12d4b4be0e5df2a4cbc4a7c21396ea00, type: 2}
   - {fileID: 11400000, guid: 0f2c2ad60d4f6464f83883fced2d6d67, type: 2}
   - {fileID: 11400000, guid: 60be9b47b5a90cc4485863fef98c86ea, type: 2}

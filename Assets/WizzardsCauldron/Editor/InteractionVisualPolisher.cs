@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
 using WizzardsCauldron.Presentation;
+using WizzardsCauldron.UI;
 
 namespace WizzardsCauldron.EditorTools
 {
@@ -277,6 +278,7 @@ namespace WizzardsCauldron.EditorTools
             CauldronController cauldron =
                 FindUnique<CauldronController>(scene);
 
+            RemoveRedPotionAndRepairRoster(scene, roomReset);
             AlignCauldronLiquid(cauldron);
             StabilizePotionStartPoses(scene);
             EnsureAmbientMusic(scene);
@@ -316,12 +318,111 @@ namespace WizzardsCauldron.EditorTools
 
             SetPotionStartPose(
                 potions,
-                "PotionRed",
-                new Vector3(-0.82f, 1.162f, 1.02f));
-            SetPotionStartPose(
-                potions,
                 "PotionGreen",
                 new Vector3(-0.259f, 0.967f, 0.72f));
+        }
+
+        private static void RemoveRedPotionAndRepairRoster(
+            Scene scene,
+            RoomResetCoordinator roomReset)
+        {
+            PotionController[] existing = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+            foreach (PotionController potion in existing)
+            {
+                bool isRed = string.Equals(
+                    potion.name,
+                    "PotionRed",
+                    StringComparison.Ordinal) ||
+                    potion.Definition != null && string.Equals(
+                        potion.Definition.StableId,
+                        "red",
+                        StringComparison.OrdinalIgnoreCase);
+                if (isRed)
+                {
+                    UnityEngine.Object.DestroyImmediate(
+                        potion.gameObject);
+                }
+            }
+
+            string[] orderedNames =
+            {
+                "PotionGreen",
+                "PotionYellow",
+                "Potion_Blue",
+                "Potion_Violet",
+                "Potion_Cyan",
+                "Potion_Orange",
+                "Potion_Magenta"
+            };
+            PotionController[] orderedPotions = orderedNames
+                .Select(name => scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        PotionController>(true))
+                    .Single(potion => string.Equals(
+                        potion.name,
+                        name,
+                        StringComparison.Ordinal)))
+                .ToArray();
+            PhysicsResettable[] potionPhysics = orderedPotions
+                .Select(potion =>
+                    potion.GetComponent<PhysicsResettable>())
+                .ToArray();
+            PhysicsResettable wandPhysics = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<
+                    PhysicsResettable>(true))
+                .Single(resettable => string.Equals(
+                    resettable.name,
+                    "Wand",
+                    StringComparison.Ordinal));
+
+            SerializedObject resetSerialized =
+                new SerializedObject(roomReset);
+            SetObjectArray(
+                resetSerialized,
+                "_potions",
+                orderedPotions);
+            SetObjectArray(
+                resetSerialized,
+                "_physicsObjects",
+                potionPhysics.Cast<UnityEngine.Object>()
+                    .Concat(new UnityEngine.Object[] { wandPhysics })
+                    .ToArray());
+            resetSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            PotionInspectionPanel inspectionPanel =
+                FindUnique<PotionInspectionPanel>(scene);
+            PotionInspectionSource[] inspectionSources = orderedPotions
+                .Select(potion =>
+                    potion.GetComponent<PotionInspectionSource>())
+                .ToArray();
+            SerializedObject inspectionSerialized =
+                new SerializedObject(inspectionPanel);
+            SetObjectArray(
+                inspectionSerialized,
+                "_sources",
+                inspectionSources);
+            inspectionSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            PuzzleDefinition expandedPuzzle =
+                LoadRequired<PuzzleDefinition>(
+                    VisualPassGameplayExtension.ExpandedPuzzlePath);
+            SerializedObject puzzleSerialized =
+                new SerializedObject(expandedPuzzle);
+            SetObjectArray(
+                puzzleSerialized,
+                "_potions",
+                orderedPotions
+                    .Select(potion => potion.Definition)
+                    .ToArray());
+            puzzleSerialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(expandedPuzzle);
+
+            Debug.Log(
+                "[WC_INTERACTION_VISUALS] PotionRed removed from the visual " +
+                "scene, reset roster, inspection roster and expanded puzzle.");
         }
 
         private static void SetPotionStartPose(
@@ -357,7 +458,8 @@ namespace WizzardsCauldron.EditorTools
             AudioSource source = musicObject.AddComponent<AudioSource>();
             source.playOnAwake = true;
             source.loop = true;
-            source.volume = 0.11f;
+            source.volume = 0.34f;
+            source.mute = false;
             source.spatialBlend = 0f;
             source.dopplerLevel = 0f;
             source.priority = 160;
@@ -911,6 +1013,27 @@ namespace WizzardsCauldron.EditorTools
             }
 
             property.objectReferenceValue = value;
+        }
+
+        private static void SetObjectArray(
+            SerializedObject serialized,
+            string propertyName,
+            UnityEngine.Object[] values)
+        {
+            SerializedProperty property =
+                serialized.FindProperty(propertyName);
+            if (property == null || !property.isArray)
+            {
+                throw new InvalidOperationException(
+                    "Missing serialized array field " + propertyName + ".");
+            }
+
+            property.arraySize = values.Length;
+            for (int index = 0; index < values.Length; index++)
+            {
+                property.GetArrayElementAtIndex(index)
+                    .objectReferenceValue = values[index];
+            }
         }
 
         private static string GetHierarchyPath(Transform transform)

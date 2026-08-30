@@ -44,8 +44,8 @@ namespace WizzardsCauldron.EditorTools
         private const int MaximumRealtimeLights = 4;
         private const int MaximumParticlesPerSystem = 48;
         private const int MaximumTotalParticles = 128;
-        private const int ExpectedPotionCount = 8;
-        private const int ExpectedPhysicsResettableCount = 9;
+        private const int ExpectedPotionCount = 7;
+        private const int ExpectedPhysicsResettableCount = 8;
 
         private static readonly PotionExpectation[] ExpectedNewPotions =
         {
@@ -76,16 +76,6 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(-0.65f, 1f, 1f),
                 Quaternion.identity,
                 new Vector3(1.065f, 0.08f, 0.4f),
-                0),
-            new AuthorizedLayoutExpectation(
-                "Placeholders/PotionRed",
-                // This is the approved target-scene pose saved in the latest
-                // visual layout.  The source scene remains at its functional
-                // baseline pose and is intentionally excluded from this
-                // target-only comparison.
-                new Vector3(-0.82f, 1.162f, 1.02f),
-                Quaternion.identity,
-                Vector3.one,
                 0),
             new AuthorizedLayoutExpectation(
                 "Placeholders/PotionGreen",
@@ -1052,7 +1042,8 @@ namespace WizzardsCauldron.EditorTools
                         label,
                         "protected object",
                         StringComparison.Ordinal) &&
-                    IsAuthorizedVisualLayoutPath(key))
+                    (IsAuthorizedVisualLayoutPath(key) ||
+                     IsIntentionallyRemovedVisualPotionPath(key)))
                 {
                     continue;
                 }
@@ -1087,6 +1078,11 @@ namespace WizzardsCauldron.EditorTools
         {
             foreach (string key in source.Keys.Union(target.Keys).OrderBy(key => key))
             {
+                if (IsIntentionallyRemovedVisualPotionPath(key))
+                {
+                    continue;
+                }
+
                 SortedDictionary<string, string> sourceFields;
                 SortedDictionary<string, string> targetFields;
                 bool sourceHas = source.TryGetValue(key, out sourceFields);
@@ -1123,6 +1119,21 @@ namespace WizzardsCauldron.EditorTools
                     }
                 }
             }
+        }
+
+        private static bool IsIntentionallyRemovedVisualPotionPath(
+            string path)
+        {
+            return string.Equals(
+                       path,
+                       "Placeholders/PotionRed",
+                       StringComparison.Ordinal) ||
+                   path.StartsWith(
+                       "Placeholders/PotionRed/",
+                       StringComparison.Ordinal) ||
+                   path.StartsWith(
+                       "Placeholders/PotionRed ::",
+                       StringComparison.Ordinal);
         }
 
         private static void ValidateExplicitInteractionIntegrity(
@@ -1184,7 +1195,7 @@ namespace WizzardsCauldron.EditorTools
             {
                 report.Ok(
                     "RoomResetCoordinator retains GameSession/CauldronIntake references, " +
-                    "eight unique potion entries, and nine unique physics-reset entries.");
+                    "seven unique potion entries, and eight unique physics-reset entries.");
             }
             else
             {
@@ -1661,7 +1672,7 @@ namespace WizzardsCauldron.EditorTools
             if (issues.Count == 0)
             {
                 report.Ok(
-                    "Gameplay extension is complete: eight consumable potions, " +
+                    "Gameplay extension is complete: seven consumable potions, " +
                     "capacity-eight scoring with overfill support, visible-pot " +
                     "intake, solid open cauldron shell and room collision guard.");
             }
@@ -1709,7 +1720,7 @@ namespace WizzardsCauldron.EditorTools
                     expectedSources.Cast<UnityEngine.Object>()))
             {
                 issues.Add(
-                    "PotionInspectionPanel must reference the eight unique " +
+                    "PotionInspectionPanel must reference the seven unique " +
                     "PotionInspectionSource components in the visual scene");
             }
         }
@@ -1810,7 +1821,7 @@ namespace WizzardsCauldron.EditorTools
                 expectedPuzzle.Potions.Count != ExpectedPotionCount)
             {
                 issues.Add(
-                    "expanded puzzle must contain eight potions at capacity 8");
+                    "expanded puzzle must contain seven potions at capacity 8");
                 return;
             }
 
@@ -1827,7 +1838,7 @@ namespace WizzardsCauldron.EditorTools
                 !sceneDefinitions.SetEquals(puzzleDefinitions))
             {
                 issues.Add(
-                    "expanded puzzle definitions do not exactly match the eight " +
+                    "expanded puzzle definitions do not exactly match the seven " +
                     "PotionController instances in the visual scene");
             }
 

@@ -126,7 +126,7 @@ The visual target scene has a deliberately expanded data set without changing th
 - Orange: health `4`, fill `2`
 - Magenta: health `9`, fill `5`
 - Expanded capacity: `8`; target health: `15`; unique optimal combination: Blue + Orange + Magenta (`15/8`).
-- Reset now restores all eight potion instances and the existing wand. The protected source scene still uses its original puzzle.
+- PotionRed was intentionally removed from the visual scene, expanded puzzle, hover-source list and reset lists. Reset now restores all seven remaining potion instances and the existing wand. The protected source scene and original Red definition asset remain unchanged and recoverable.
 
 ## Quest performance measures
 

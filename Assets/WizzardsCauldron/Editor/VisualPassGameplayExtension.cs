@@ -201,8 +201,6 @@ namespace WizzardsCauldron.EditorTools
             EnsureFolder(PotionDataFolder);
             EnsureFolder(PuzzleDataFolder);
 
-            PotionDefinition red = LoadRequiredAsset<PotionDefinition>(
-                PotionDataFolder + "/SO_PotionRed.asset");
             PotionDefinition green = LoadRequiredAsset<PotionDefinition>(
                 PotionDataFolder + "/SO_PotionGreen.asset");
             PotionDefinition yellow = LoadRequiredAsset<PotionDefinition>(
@@ -224,9 +222,8 @@ namespace WizzardsCauldron.EditorTools
                     spec);
             }
 
-            var allDefinitions = new PotionDefinition[8]
+            var allDefinitions = new PotionDefinition[7]
             {
-                red,
                 green,
                 yellow,
                 newDefinitions[0],
@@ -251,7 +248,7 @@ namespace WizzardsCauldron.EditorTools
             AssetDatabase.SaveAssetIfDirty(expandedPuzzle);
 
             Debug.Log(
-                "[WC_GAMEPLAY_EXTENSION] Data ready: 8 unique potions, " +
+                "[WC_GAMEPLAY_EXTENSION] Data ready: 7 unique potions, " +
                 "capacity 8, expected optimum blue + orange + magenta " +
                 "(health 15, fill 8).");
 
@@ -276,6 +273,8 @@ namespace WizzardsCauldron.EditorTools
             }
 
             ValidateTargetScene(scene);
+
+            RemoveRedPotionFromTargetScene(scene);
 
             GameObject[] previousRoots = FindGeneratedRoots(scene);
             PotionController[] originalPotions =
@@ -357,7 +356,8 @@ namespace WizzardsCauldron.EditorTools
                 "_sources",
                 inspectionSources);
 
-            var resetPhysics = new PhysicsResettable[9];
+            var resetPhysics = new PhysicsResettable[
+                potionPhysics.Length + 1];
             for (int index = 0;
                  index < potionPhysics.Length;
                  index++)
@@ -802,9 +802,12 @@ namespace WizzardsCauldron.EditorTools
                         PotionController>(true));
             }
 
-            var ordered = new PotionController[3];
+            int originalPotionCount =
+                data.PotionDefinitions.Count -
+                data.NewPotionDefinitions.Count;
+            var ordered = new PotionController[originalPotionCount];
             for (int definitionIndex = 0;
-                 definitionIndex < 3;
+                 definitionIndex < originalPotionCount;
                  definitionIndex++)
             {
                 PotionDefinition expected =
@@ -838,6 +841,31 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return ordered;
+        }
+
+        private static void RemoveRedPotionFromTargetScene(Scene scene)
+        {
+            PotionController[] potions = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<PotionController>(true))
+                .ToArray();
+
+            foreach (PotionController potion in potions)
+            {
+                bool isRed = string.Equals(
+                    potion.name,
+                    "PotionRed",
+                    StringComparison.Ordinal) ||
+                    potion.Definition != null && string.Equals(
+                        potion.Definition.StableId,
+                        "red",
+                        StringComparison.OrdinalIgnoreCase);
+                if (isRed)
+                {
+                    UnityEngine.Object.DestroyImmediate(
+                        potion.gameObject);
+                }
+            }
         }
 
         private static PotionController[] FindLegacyExtensionPotions(

@@ -156,10 +156,10 @@ namespace WizzardsCauldron.EditorTools
                     .ToArray()
             };
 
-            if (result.Potions.Length != 8)
+            if (result.Potions.Length != 7)
             {
                 throw new InvalidOperationException(
-                    "Expected exactly eight PotionController " +
+                    "Expected exactly seven PotionController " +
                     "instances, found " + result.Potions.Length + ".");
             }
 

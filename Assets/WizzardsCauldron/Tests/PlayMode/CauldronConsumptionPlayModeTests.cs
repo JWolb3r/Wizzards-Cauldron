@@ -42,7 +42,26 @@ namespace WizzardsCauldron.Tests.PlayMode
             Assert.That(session, Is.Not.Null);
             Assert.That(reset, Is.Not.Null);
             Assert.That(intakeProxy, Is.Not.Null);
-            Assert.That(potions.Length, Is.EqualTo(8));
+            Assert.That(potions.Length, Is.EqualTo(7));
+            Assert.That(
+                potions.Any(potion =>
+                    string.Equals(
+                        potion.Definition.StableId,
+                        "red",
+                        System.StringComparison.OrdinalIgnoreCase)),
+                Is.False);
+
+            AstralAmbientMusic ambientMusic =
+                Object.FindFirstObjectByType<AstralAmbientMusic>();
+            Assert.That(ambientMusic, Is.Not.Null);
+            AudioSource ambientSource =
+                ambientMusic.GetComponent<AudioSource>();
+            Assert.That(ambientSource, Is.Not.Null);
+            Assert.That(ambientSource.clip, Is.Not.Null);
+            Assert.That(ambientSource.loop, Is.True);
+            Assert.That(ambientSource.mute, Is.False);
+            Assert.That(ambientSource.volume, Is.GreaterThanOrEqualTo(0.3f));
+            Assert.That(ambientSource.isPlaying, Is.True);
 
             Vector3[] resetPositions = potions
                 .Select(potion => potion.transform.position)
