@@ -15,13 +15,15 @@ namespace WizzardsCauldron.EditorTools
 {
     /// <summary>
     /// Targeted, repeatable polish for the two physical controls. This tool
-    /// never runs the full visual builder and never changes gameplay colliders.
+    /// never runs the full visual builder. It only applies the explicitly
+    /// approved enlarged finish-rune trigger in the copied visual scene.
     /// </summary>
     internal static class InteractionVisualPolisher
     {
         private const string FinishRuneName = "WC_FinishTargetRune";
         private const string ResetRuneName = "WC_ResetRuneButton";
         private const string ResetWandTriggerName = "WC_ResetWandTrigger";
+        private const string GameplayAudioName = "WC_GameplayAudioFeedback";
         private const string GameplayExtensionRootName =
             "__WC_GAMEPLAY_EXTENSION__";
 
@@ -78,7 +80,7 @@ namespace WizzardsCauldron.EditorTools
 
             AssetDatabase.SaveAssets();
             Debug.Log(
-                "[WC_INTERACTION_VISUALS] COMPLETE | fullVisualBuild=false | gameplayCollidersUnchanged=true");
+                "[WC_INTERACTION_VISUALS] COMPLETE | fullVisualBuild=false | protectedSourceUnchanged=true | finishHitboxRadius=0.9");
         }
 
         public static void LogVisibleCyanRenderersBatch()
@@ -282,6 +284,8 @@ namespace WizzardsCauldron.EditorTools
             AlignCauldronLiquid(cauldron);
             StabilizePotionStartPoses(scene);
             EnsureAmbientMusic(scene);
+            EnsureGameplayAudioFeedback(scene, session);
+            UpdateInstructionText(scene);
 
             PolishWandTarget(
                 wandActivator,
@@ -466,6 +470,100 @@ namespace WizzardsCauldron.EditorTools
             musicObject.AddComponent<AstralAmbientMusic>();
         }
 
+        private static void EnsureGameplayAudioFeedback(
+            Scene scene,
+            GameSessionController session)
+        {
+            GameObject visualRoot = scene.GetRootGameObjects()
+                .Single(root => string.Equals(
+                    root.name,
+                    "__WC_VISUAL_PASS__",
+                    StringComparison.Ordinal));
+            DestroyDirectChild(visualRoot.transform, GameplayAudioName);
+
+            CauldronIntake intake = FindUnique<CauldronIntake>(scene);
+            ResetHoldControl reset = FindUnique<ResetHoldControl>(scene);
+            WandActivator finish = FindUnique<WandActivator>(scene);
+
+            GameObject audioRoot = new GameObject(GameplayAudioName);
+            audioRoot.transform.SetParent(visualRoot.transform, false);
+
+            AudioSource potionSource = CreateSpatialAudioSource(
+                audioRoot.transform,
+                "PotionIntoCauldronSfx",
+                intake.transform.position,
+                0.72f);
+            AudioSource resetSource = CreateSpatialAudioSource(
+                audioRoot.transform,
+                "ResetRuneSfx",
+                reset.transform.position,
+                0.66f);
+            AudioSource resultSource = CreateSpatialAudioSource(
+                audioRoot.transform,
+                "SolutionResultSfx",
+                finish.transform.position,
+                0.74f);
+
+            AlchemyAudioFeedback feedback =
+                audioRoot.AddComponent<AlchemyAudioFeedback>();
+            SerializedObject serialized = new SerializedObject(feedback);
+            SetReference(serialized, "_cauldronIntake", intake);
+            SetReference(serialized, "_gameSession", session);
+            SetReference(serialized, "_potionSource", potionSource);
+            SetReference(serialized, "_resetSource", resetSource);
+            SetReference(serialized, "_resultSource", resultSource);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static AudioSource CreateSpatialAudioSource(
+            Transform parent,
+            string name,
+            Vector3 worldPosition,
+            float volume)
+        {
+            GameObject sourceObject = new GameObject(name);
+            sourceObject.transform.SetParent(parent, false);
+            sourceObject.transform.position = worldPosition;
+
+            AudioSource source = sourceObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.volume = volume;
+            source.spatialBlend = 0.82f;
+            source.dopplerLevel = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 0.35f;
+            source.maxDistance = 5.5f;
+            source.priority = 96;
+            return source;
+        }
+
+        private static void UpdateInstructionText(Scene scene)
+        {
+            TMP_Text instructionText = scene.GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<TMP_Text>(true))
+                .FirstOrDefault(text =>
+                    text.text != null &&
+                    text.text.IndexOf(
+                        "Your challenge is to brew",
+                        StringComparison.Ordinal) >= 0);
+            if (instructionText == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not find the visual-scene instruction text.");
+            }
+
+            instructionText.text =
+                "Your challenge is to brew the strongest restorative mixture.\n\n" +
+                "1. Point at a potion to inspect its Health and Fill values.\n\n" +
+                "2. Pour your chosen potions into the cauldron.\n\n" +
+                "3. Stay within the cauldron's capacity. Each potion can only be used once.\n\n" +
+                "4. To submit and display your solution, touch the large glowing " +
+                "SUBMIT SOLUTION rune beside the cauldron with the wand tip.\n\n" +
+                "Touch the RESET rune with the wand tip to start over.";
+        }
+
         private static void AlignCauldronLiquid(
             CauldronController cauldron)
         {
@@ -516,6 +614,20 @@ namespace WizzardsCauldron.EditorTools
             Material particleMaterial)
         {
             Transform target = activator.transform;
+            SphereCollider finishTrigger =
+                target.GetComponent<SphereCollider>();
+            if (finishTrigger == null)
+            {
+                throw new InvalidOperationException(
+                    "The finish target requires its SphereCollider.");
+            }
+
+            // Explicitly approved target-scene interaction adjustment: the
+            // wand-tip hit area grows from roughly 15 cm to 27 cm while the
+            // protected functional source scene remains unchanged.
+            finishTrigger.isTrigger = true;
+            finishTrigger.radius = 0.9f;
+
             Renderer primitiveRenderer = target.GetComponent<Renderer>();
             if (primitiveRenderer != null)
             {
@@ -557,6 +669,8 @@ namespace WizzardsCauldron.EditorTools
                 cyan,
                 gold,
                 0.045f);
+
+            CreateFinishLabel(visual.transform);
 
             // A subtle violet halo separates the gameplay rune from the
             // cyan cauldron liquid without adding another large room ring.
@@ -797,6 +911,37 @@ namespace WizzardsCauldron.EditorTools
                 Quaternion.identity);
 
             return root.transform;
+        }
+
+        private static void CreateFinishLabel(Transform parent)
+        {
+            TMP_FontAsset font = TMP_Settings.defaultFontAsset;
+            if (font == null)
+            {
+                throw new InvalidOperationException(
+                    "TextMesh Pro has no default font for the finish-rune label.");
+            }
+
+            GameObject labelObject = new GameObject("SubmitSolutionLabel");
+            labelObject.transform.SetParent(parent, false);
+            labelObject.transform.localPosition =
+                new Vector3(0f, -1.48f, 0.06f);
+            labelObject.transform.localRotation = Quaternion.identity;
+            labelObject.transform.localScale = Vector3.one * 0.25f;
+
+            TextMeshPro label = labelObject.AddComponent<TextMeshPro>();
+            label.font = font;
+            label.text = "SUBMIT SOLUTION";
+            label.fontStyle = FontStyles.Bold;
+            label.fontSize = 1.35f;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 0.72f;
+            label.fontSizeMax = 1.35f;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = new Color(1f, 0.76f, 0.24f, 1f);
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.rectTransform.sizeDelta = new Vector2(6f, 1.1f);
+            label.raycastTarget = false;
         }
 
         private static void CreateRuneGlyph(

@@ -34,6 +34,7 @@ Last updated: 2026-08-29 (Europe/Berlin)
 - `CauldronLiquidDisplay` listens to `TotalsChanged` and drives only its assigned liquid transform.
 - Visual listeners may react to these events but must not mutate scoring, potion state, capacity, session state, or reset state.
 - Preserve the cauldron body collider, `IntakeTrigger`, `FinishTarget`, `WandTip`, interactive roots, reset tracking lists, and all saved references.
+- Joel explicitly authorized enlarging only the copied visual scene's `FinishTarget` trigger on 2026-08-30. Its local radius is `0.9` (about 27 cm world diameter); the source-scene trigger remains unchanged.
 - Joel explicitly authorized a target-scene-only puzzle extension on 2026-08-29. Five project-owned definitions were added: Blue `2/1`, Violet `5/3`, Cyan `7/4`, Orange `4/2`, and Magenta `9/5` (`health/fill`).
 - `SO_PuzzleVisualExpanded.asset` contains Green, Yellow and the five new definitions, capacity `8`, and target health `15`. The unique optimal combination is Blue + Orange + Magenta (`15` health, `8` fill).
 - PotionRed was intentionally removed from the copied visual scene, its puzzle definition list, hover-source list and reset lists on 2026-08-30. The visual scene now contains seven potion instances, and its `RoomResetCoordinator` tracks eight physics-reset objects (seven potions plus the wand). Runtime gameplay scripts, the protected source scene, the original Red definition asset and the shared potion prefab remain unchanged so the functional baseline stays recoverable.

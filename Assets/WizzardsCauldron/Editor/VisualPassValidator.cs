@@ -1113,6 +1113,11 @@ namespace WizzardsCauldron.EditorTools
                     }
                     else if (!string.Equals(sourceValue, targetValue, StringComparison.Ordinal))
                     {
+                        if (IsAuthorizedFinishTriggerField(key, field))
+                        {
+                            continue;
+                        }
+
                         differences.Add(
                             key + " changed " + field + " (source=" + sourceValue +
                             ", target=" + targetValue + ")");
@@ -1133,6 +1138,20 @@ namespace WizzardsCauldron.EditorTools
                        StringComparison.Ordinal) ||
                    path.StartsWith(
                        "Placeholders/PotionRed ::",
+                       StringComparison.Ordinal);
+        }
+
+        private static bool IsAuthorizedFinishTriggerField(
+            string componentKey,
+            string propertyPath)
+        {
+            return string.Equals(
+                       componentKey,
+                       "Placeholders/FinishTarget :: UnityEngine.SphereCollider[0]",
+                       StringComparison.Ordinal) &&
+                   string.Equals(
+                       propertyPath,
+                       "m_Radius",
                        StringComparison.Ordinal);
         }
 
@@ -1170,17 +1189,25 @@ namespace WizzardsCauldron.EditorTools
                     : null;
             }
 
-            if (activators.Length == 1 && finishTrigger != null && finishTrigger.isTrigger)
+            SphereCollider finishSphere = finishTrigger as SphereCollider;
+            bool finishHitboxValid =
+                finishSphere != null &&
+                finishSphere.radius >= 0.85f &&
+                finishSphere.radius <= 0.95f;
+            if (activators.Length == 1 &&
+                finishTrigger != null &&
+                finishTrigger.isTrigger &&
+                finishHitboxValid)
             {
                 report.Ok(
-                    "WandActivator remains unique and references an enabled trigger target at " +
-                    GetHierarchyPath(finishTrigger.transform) + ".");
+                    "WandActivator remains unique and references the approved enlarged " +
+                    "wand trigger at " + GetHierarchyPath(finishTrigger.transform) + ".");
             }
             else
             {
                 report.Error(
                     "WandActivator/FinishTarget integrity failed: expected one activator " +
-                    "with a non-null trigger Collider reference.");
+                    "with the approved enlarged SphereCollider trigger.");
             }
 
             RoomResetCoordinator[] resetCoordinators = targetRoots

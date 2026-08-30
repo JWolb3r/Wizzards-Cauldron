@@ -114,9 +114,11 @@ Each wrapper keeps Alex's source FBX as an unchanged child with its scale/orient
 
 The controller only changes ParticleSystems, one optional Light, and a MaterialPropertyBlock on the cauldron rune. It does not mutate potion, score, capacity, session, or reset state and creates no material instances.
 
+`AlchemyAudioFeedback` also subscribes read-only and generates small, license-free sound clips at runtime: a glass/magic splash for processed potions, a spatial reset sweep, and distinct optimal/valid/failed solution chimes. The three one-shot sources are positioned at the cauldron, reset rune, and submit rune; ambient music remains a separate low-volume source.
+
 The existing `CauldronLiquidDisplay` and its protected `LiquidVisual` transform remain in place; only the material was restyled.
 
-The large primitive renderer on `FinishTarget` is hidden and replaced visually by a small collider-free rune. Its trigger, `WandActivator` reference, position, and gameplay behavior are unchanged.
+The large primitive renderer on `FinishTarget` is hidden and replaced visually by a rune labeled `SUBMIT SOLUTION`. Joel explicitly requested a more forgiving hit area, so only the copied visual scene's existing trigger radius was enlarged from `0.5` to `0.9` local units (about 15 cm to 27 cm world diameter). The `WandActivator` reference and wand-only behavior remain intact; the source scene is unchanged. The instruction board now explains where and how to submit and reset.
 
 The visual target scene has a deliberately expanded data set without changing the solver or session code:
 
@@ -133,7 +135,7 @@ The visual target scene has a deliberately expanded data set without changing th
 - Four configured realtime/mixed lights total; no non-directional realtime shadows.
 - Quest-readable directional/ambient fallback because Performance URP disables additional lights.
 - LDR-safe restrained Bloom; HDR remains disabled.
-- Every particle system is capped at 48 or fewer particles; total configured maximum is `122/128`, including the four low-density candle flames.
+- Every particle system is capped at 48 or fewer particles. The current validator reports a conservative aggregate configured maximum of `374/128`; effects are short and do not all run together, but this remains a Quest profiling item.
 - No particle, portal, ordinary decoration, or Alex visual wrapper has a Collider. The only added colliders are the four explicitly requested, opaque workbench collision volumes under the project-owned gameplay-extension root.
 - Opaque URP materials are preferred; transparency is limited to bottles and small particles.
 - No distortion, fluid simulation, realtime reflection probe, motion blur, or depth of field.
@@ -145,9 +147,10 @@ The visual target scene has a deliberately expanded data set without changing th
 - A second consecutive builder run completed successfully without duplicating gameplay objects, confirming repeatability.
 - Builder safety gate confirmed all 121 protected serialized components and 59 protected poses before generating content (`Logs/VisualPassBuild_Idempotence_ExpandedFinal.log`).
 - Final validator: `42 OK`, `0 WARN`, `0 ERROR` (`Logs/VisualPassValidation_ExpandedFinal2.log`).
-- Expanded-scene checks passed: five additional defined/grabbable/resettable potions, eight total PotionControllers, nine physics reset entries, capacity-eight puzzle, unique optimum, and four non-trigger table collision volumes.
+- Expanded-scene checks passed: five additional defined/grabbable/resettable potions, seven total PotionControllers after the intentional removal of PotionRed, eight physics-reset entries, capacity-eight puzzle, unique optimum, and four non-trigger table collision volumes.
 - Missing scripts: none across 341 target-scene GameObjects.
-- Protected source/target state: identical across 121 serialized protected components and 59 protected object poses.
+- Follow-up PlayMode test after the sound and submit-rune update: passed (`Logs/interaction-audio-results.xml`). It verifies all seven potions, reset stability, generated audio readiness/playback, the enlarged submit trigger, and its label.
+- Latest read-only validator: the enlarged submit trigger passes, with `42 OK`, `1 WARN`, and `3 ERROR` (`Logs/interaction-audio-validation.log`). The remaining errors describe older target-layout drift already present in the working scene (reparented `WandTable`, changed Reset/Wand poses, and target-only expanded-puzzle reference); this update did not reset those user-approved scene positions.
 - Protected coverage: 16 Colliders, 4 Rigidbodies, 80 XR components, and 21 gameplay/controller components.
 - Shared gameplay prefab hashes remain unchanged:
   - `PF_PotionBottle.prefab`: `AC95364430EE70DC1DE6663189BD4465B38B835DCE4DA7D67A1FFFADC561E917`

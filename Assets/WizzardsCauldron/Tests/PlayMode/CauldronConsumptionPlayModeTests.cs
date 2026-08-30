@@ -63,6 +63,35 @@ namespace WizzardsCauldron.Tests.PlayMode
             Assert.That(ambientSource.volume, Is.GreaterThanOrEqualTo(0.3f));
             Assert.That(ambientSource.isPlaying, Is.True);
 
+            AlchemyAudioFeedback audioFeedback =
+                Object.FindFirstObjectByType<AlchemyAudioFeedback>();
+            Assert.That(audioFeedback, Is.Not.Null);
+            Assert.That(audioFeedback.IsReady, Is.True);
+            AudioSource potionSfx = GameObject.Find(
+                    "PotionIntoCauldronSfx")
+                .GetComponent<AudioSource>();
+            AudioSource resetSfx = GameObject.Find(
+                    "ResetRuneSfx")
+                .GetComponent<AudioSource>();
+            AudioSource resultSfx = GameObject.Find(
+                    "SolutionResultSfx")
+                .GetComponent<AudioSource>();
+
+            WandActivator finishActivator =
+                Object.FindFirstObjectByType<WandActivator>();
+            SphereCollider finishHitbox = finishActivator
+                .GetComponent<SphereCollider>();
+            Assert.That(finishHitbox, Is.Not.Null);
+            Assert.That(finishHitbox.isTrigger, Is.True);
+            Assert.That(finishHitbox.radius, Is.InRange(0.85f, 0.95f));
+
+            GameObject submitLabel = GameObject.Find(
+                "SubmitSolutionLabel");
+            Assert.That(submitLabel, Is.Not.Null);
+            Assert.That(
+                submitLabel.GetComponent("TextMeshPro"),
+                Is.Not.Null);
+
             Vector3[] resetPositions = potions
                 .Select(potion => potion.transform.position)
                 .ToArray();
@@ -144,6 +173,7 @@ namespace WizzardsCauldron.Tests.PlayMode
                             firstExplosionPosition),
                         Is.LessThan(0.001f));
                     Assert.That(explosion.isPlaying, Is.True);
+                    Assert.That(potionSfx.isPlaying, Is.True);
                 }
             }
 
@@ -157,9 +187,11 @@ namespace WizzardsCauldron.Tests.PlayMode
                 session.TryFinishAttempt(out AttemptResult result),
                 Is.True);
             Assert.That(result.Outcome, Is.EqualTo(AttemptOutcome.Overfilled));
+            Assert.That(resultSfx.isPlaying, Is.True);
 
             Assert.That(reset.TryResetRoom(), Is.True);
             yield return null;
+            Assert.That(resetSfx.isPlaying, Is.True);
 
             Assert.That(cauldron.UsedCapacity, Is.Zero);
             Assert.That(cauldron.TotalHealth, Is.Zero);
