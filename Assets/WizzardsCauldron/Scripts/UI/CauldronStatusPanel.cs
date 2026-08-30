@@ -66,7 +66,7 @@ namespace WizzardsCauldron.UI
                 $"Health: {_cauldron.TotalHealth}";
 
             _capacityText.text =
-                $"Capacity: {_cauldron.RemainingCapacity} / " +
+                $"Capacity: {_cauldron.UsedCapacity} / " +
                 $"{_cauldron.MaximumCapacity}";
         }
 
@@ -82,7 +82,10 @@ namespace WizzardsCauldron.UI
             {
                 case PotionAcceptanceResult.Accepted:
                     _messageText.text =
-                        $"{potionName} accepted";
+                        _cauldron.UsedCapacity >
+                        _cauldron.MaximumCapacity
+                            ? $"{potionName} accepted - overfilled"
+                            : $"{potionName} accepted";
                     break;
 
                 case PotionAcceptanceResult.TooFull:

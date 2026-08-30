@@ -110,7 +110,7 @@ namespace WizzardsCauldron.EditorTools
                 // Preserve the latest target-scene placement from the
                 // approved visual layout; only the child visual wrapper is
                 // changed by the composer.
-                new Vector3(0.286f, 1.232f, -0.021f),
+                new Vector3(0.286f, 1.232f, 0.834f),
                 new Quaternion(0f, 0f, 0.7071068f, 0.7071068f),
                 Vector3.one,
                 0),
@@ -468,6 +468,16 @@ namespace WizzardsCauldron.EditorTools
                 sceneComponents,
                 "PotionSpawnCollisionExclusion",
                 1,
+                report);
+            ValidateNamedComponentCount(
+                sceneComponents,
+                "CauldronIntakeProxy",
+                1,
+                report);
+            ValidateNamedComponentCount(
+                sceneComponents,
+                "PotionConsumptionPresentation",
+                ExpectedPotionCount,
                 report);
 
             ValidateControllerCounts(sceneRoots, report);
@@ -1302,6 +1312,11 @@ namespace WizzardsCauldron.EditorTools
                         "XRGrabInteractable",
                         StringComparison.Ordinal))
                 .ToArray();
+            PotionConsumptionPresentation[] consumptionPresentations =
+                sceneRoots
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        PotionConsumptionPresentation>(true))
+                    .ToArray();
 
             if (extensionPotions.Length != ExpectedNewPotions.Length)
             {
@@ -1337,6 +1352,25 @@ namespace WizzardsCauldron.EditorTools
                     "expected " + ExpectedNewPotions.Length +
                     " added-potion XRGrabInteractable components, found " +
                     extensionGrabInteractables.Length);
+            }
+            if (consumptionPresentations.Length != ExpectedPotionCount)
+            {
+                issues.Add(
+                    "expected " + ExpectedPotionCount +
+                    " potion-consumption presentation components, found " +
+                    consumptionPresentations.Length);
+            }
+            foreach (PotionConsumptionPresentation presentation in
+                consumptionPresentations)
+            {
+                if (presentation.Potion == null ||
+                    presentation.Potion.gameObject != presentation.gameObject ||
+                    presentation.GrabInteractable == null)
+                {
+                    issues.Add(
+                        GetHierarchyPath(presentation.transform) +
+                        " has incomplete potion-consumption references");
+                }
             }
 
             HashSet<string> extensionIds = new HashSet<string>(
@@ -1486,14 +1520,61 @@ namespace WizzardsCauldron.EditorTools
                 new Vector3(4.10f, 3.00f, 0.10f),
                 issues);
 
-            BoxCollider[] tableColliders = extensionRoot
+            BoxCollider[] targetOnlyColliders = extensionRoot
                 .GetComponentsInChildren<BoxCollider>(true);
-            if (tableColliders.Length != 7)
+            if (targetOnlyColliders.Length != 13)
             {
                 issues.Add(
-                    "expected exactly seven target-only collision BoxCollider " +
+                    "expected exactly thirteen target-only BoxCollider " +
                     "components, found " +
-                    tableColliders.Length);
+                    targetOnlyColliders.Length);
+            }
+
+            Transform cauldronCollisionRoot = extensionRoot.transform.Find(
+                VisualPassGameplayExtension.CauldronCollisionRootName);
+            BoxCollider[] cauldronShell = cauldronCollisionRoot != null
+                ? cauldronCollisionRoot.GetComponentsInChildren<
+                    BoxCollider>(true)
+                : Array.Empty<BoxCollider>();
+            string[] expectedCauldronColliderNames =
+            {
+                "CauldronWallLeft",
+                "CauldronWallRight",
+                "CauldronWallFront",
+                "CauldronWallBack",
+                "CauldronBottom"
+            };
+            if (cauldronCollisionRoot == null ||
+                cauldronShell.Length !=
+                    expectedCauldronColliderNames.Length ||
+                cauldronShell.Any(collider =>
+                    collider == null ||
+                    collider.isTrigger ||
+                    !collider.enabled ||
+                    !expectedCauldronColliderNames.Contains(
+                        collider.name)))
+            {
+                issues.Add(
+                    "visible cauldron must have five enabled solid shell " +
+                    "colliders and an open top");
+            }
+
+            Transform intakeProxyTransform = extensionRoot.transform.Find(
+                VisualPassGameplayExtension.CauldronIntakeProxyName);
+            CauldronIntakeProxy intakeProxy = intakeProxyTransform != null
+                ? intakeProxyTransform.GetComponent<CauldronIntakeProxy>()
+                : null;
+            BoxCollider intakeProxyCollider = intakeProxyTransform != null
+                ? intakeProxyTransform.GetComponent<BoxCollider>()
+                : null;
+            if (intakeProxy == null ||
+                intakeProxy.Intake == null ||
+                intakeProxyCollider == null ||
+                !intakeProxyCollider.enabled ||
+                !intakeProxyCollider.isTrigger)
+            {
+                issues.Add(
+                    "visible cauldron intake proxy is missing or incomplete");
             }
 
             XrTrackedSpaceCollisionGuard[] collisionGuards = extensionRoot
@@ -1513,15 +1594,18 @@ namespace WizzardsCauldron.EditorTools
                     issues.Add(
                         "tracked-space collision guard has missing XR references");
                 }
-                if (blockers == null || blockers.Length != 10 ||
+                if (blockers == null || blockers.Length != 15 ||
                     blockers.Any(collider =>
                         collider == null || collider.isTrigger ||
                         !collider.enabled) ||
-                    blockers.Distinct().Count() != 10)
+                    blockers.Distinct().Count() != 15 ||
+                    cauldronShell.Any(collider =>
+                        !blockers.Contains(collider)))
                 {
                     issues.Add(
                         "tracked-space collision guard must reference the three " +
-                        "room walls and seven enabled structural colliders");
+                        "room walls, seven workbench colliders and five " +
+                        "visible-cauldron shell colliders");
                 }
             }
 
@@ -1577,9 +1661,9 @@ namespace WizzardsCauldron.EditorTools
             if (issues.Count == 0)
             {
                 report.Ok(
-                    "Gameplay extension is complete: five defined, grabbable, " +
-                    "resettable potions; capacity-eight puzzle; and four " +
-                    "non-trigger workbench volumes plus a front-room boundary.");
+                    "Gameplay extension is complete: eight consumable potions, " +
+                    "capacity-eight scoring with overfill support, visible-pot " +
+                    "intake, solid open cauldron shell and room collision guard.");
             }
             else
             {

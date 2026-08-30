@@ -63,12 +63,6 @@ namespace WizzardsCauldron.Core
                 return PotionAcceptanceResult.AlreadyUsed;
             }
 
-            if (_usedCapacity + definition.FillValue >
-                MaximumCapacity)
-            {
-                return PotionAcceptanceResult.TooFull;
-            }
-
             _acceptedPotionIds.Add(definition.StableId);
             _usedCapacity += definition.FillValue;
             _totalHealth += definition.HealthValue;

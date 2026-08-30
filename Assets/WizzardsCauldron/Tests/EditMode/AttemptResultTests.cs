@@ -96,6 +96,48 @@ namespace WizzardsCauldron.Tests.EditMode
         }
 
         [Test]
+        public void Create_OverfilledSelection_ReturnsOverfilledOutcome()
+        {
+            PuzzleSolution optimal =
+                CreateIntroSolution();
+
+            AttemptResult result =
+                AttemptResult.Create(
+                    8,
+                    6,
+                    4,
+                    optimal);
+
+            Assert.That(
+                result.Outcome,
+                Is.EqualTo(
+                    AttemptOutcome.Overfilled));
+
+            Assert.That(
+                result.UsedCapacity,
+                Is.EqualTo(6));
+        }
+
+        [Test]
+        public void Create_BestHealthWithWrongFill_IsNotOptimal()
+        {
+            PuzzleSolution optimal =
+                CreateIntroSolution();
+
+            AttemptResult result =
+                AttemptResult.Create(
+                    5,
+                    3,
+                    4,
+                    optimal);
+
+            Assert.That(
+                result.Outcome,
+                Is.EqualTo(
+                    AttemptOutcome.ValidSolution));
+        }
+
+        [Test]
         public void Create_CopiesOptimalPotionIds()
         {
             PuzzleSolution optimal =

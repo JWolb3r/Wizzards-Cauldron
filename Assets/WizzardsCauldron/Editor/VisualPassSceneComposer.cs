@@ -99,6 +99,11 @@ namespace WizzardsCauldron.EditorTools
             InteractiveVisuals interactiveVisuals =
                 IntegrateAlexVisuals(references, assets);
 
+            VisualPassGameplayExtension.FinalizeCauldronFeatures(
+                scene,
+                gameplayData.GameplayRoot.transform,
+                references.Potions);
+
             BuildAstralPortal(portalGroup, assets);
             BuildDecoration(decoration, assets);
 

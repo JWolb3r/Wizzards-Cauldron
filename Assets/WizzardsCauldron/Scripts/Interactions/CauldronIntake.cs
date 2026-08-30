@@ -43,14 +43,14 @@ namespace WizzardsCauldron.Interactions
             PotionController potion =
                 other.GetComponentInParent<PotionController>();
 
-            if (potion == null)
-            {
-                return;
-            }
+            TryProcessPotion(potion);
+        }
 
-            if (!_potionsInside.Add(potion))
+        public bool TryProcessPotion(PotionController potion)
+        {
+            if (potion == null || !_potionsInside.Add(potion))
             {
-                return;
+                return false;
             }
 
             if (_cauldron == null)
@@ -58,7 +58,8 @@ namespace WizzardsCauldron.Interactions
                 Debug.LogError(
                     "CauldronIntake has no CauldronController.",
                     this);
-                return;
+                _potionsInside.Remove(potion);
+                return false;
             }
 
             PotionAcceptanceResult result =
@@ -66,6 +67,7 @@ namespace WizzardsCauldron.Interactions
 
             PotionProcessed?.Invoke(potion, result);
             LogResult(potion, result);
+            return true;
         }
 
         private void OnTriggerExit(Collider other)
@@ -73,6 +75,11 @@ namespace WizzardsCauldron.Interactions
             PotionController potion =
                 other.GetComponentInParent<PotionController>();
 
+            StopTrackingPotion(potion);
+        }
+
+        public void StopTrackingPotion(PotionController potion)
+        {
             if (potion != null)
             {
                 _potionsInside.Remove(potion);

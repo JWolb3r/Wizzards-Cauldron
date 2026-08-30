@@ -1,0 +1,19 @@
+{
+    "name": "WizzardsCauldron.PlayModeTests",
+    "rootNamespace": "WizzardsCauldron.Tests.PlayMode",
+    "references": [
+        "WizzardsCauldron.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

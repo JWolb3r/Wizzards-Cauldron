@@ -232,6 +232,10 @@ namespace WizzardsCauldron.Presentation
             {
                 Color potionColor = GetPotionColor(potion);
 
+                PositionPotionExplosion(
+                    _acceptedParticles,
+                    potion);
+
                 PlayParticleSystem(
                     _acceptedParticles,
                     potionColor,
@@ -298,6 +302,19 @@ namespace WizzardsCauldron.Presentation
                         _validAttemptColor,
                         _validLightIntensity,
                         _validEmissionMultiplier,
+                        _attemptPulseDuration * 0.75f);
+                    break;
+
+                case AttemptOutcome.Overfilled:
+                    PlayParticleSystem(
+                        _rejectedParticles,
+                        _rejectedColor,
+                        _noPotionsColor);
+
+                    StartPulse(
+                        _rejectedColor,
+                        _rejectedLightIntensity,
+                        _rejectedEmissionMultiplier,
                         _attemptPulseDuration * 0.75f);
                     break;
 
@@ -590,6 +607,20 @@ namespace WizzardsCauldron.Presentation
                     .StopEmittingAndClear);
 
             particles.Play(true);
+        }
+
+        private static void PositionPotionExplosion(
+            ParticleSystem particles,
+            PotionController potion)
+        {
+            if (particles == null || potion == null)
+            {
+                return;
+            }
+
+            particles.transform.position =
+                potion.transform.position +
+                Vector3.up * 0.04f;
         }
 
         private void StopAllParticles()

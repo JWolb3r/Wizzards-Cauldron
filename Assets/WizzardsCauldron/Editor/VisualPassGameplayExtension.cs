@@ -140,6 +140,10 @@ namespace WizzardsCauldron.EditorTools
             "TrackedSpaceCollisionGuard";
         internal const string PotionSpawnCollisionExclusionName =
             "PotionSpawnCollisionExclusion";
+        internal const string CauldronCollisionRootName =
+            "CauldronSolidCollision";
+        internal const string CauldronIntakeProxyName =
+            "VisibleCauldronIntake";
 
         private const string PotionDataFolder =
             "Assets/WizzardsCauldron/Data/Potions";
@@ -338,6 +342,8 @@ namespace WizzardsCauldron.EditorTools
             PotionInspectionSource[] inspectionSources =
                 ResolvePotionInspectionSources(allPotions);
 
+            EnsurePotionConsumptionPresentations(allPotions);
+
             AssignObjectReference(
                 gameSession,
                 "_puzzleDefinition",
@@ -428,6 +434,198 @@ namespace WizzardsCauldron.EditorTools
                 "front-room boundary.");
 
             return data;
+        }
+
+        /// <summary>
+        /// Aligns only project-owned collision and intake helpers with the
+        /// finished visible cauldron wrapper. Existing artwork, poses,
+        /// protected colliders and protected triggers remain unchanged.
+        /// </summary>
+        internal static void FinalizeCauldronFeatures(
+            Scene scene,
+            Transform gameplayRoot,
+            PotionController[] potions)
+        {
+            ValidateTargetScene(scene);
+            if (gameplayRoot == null)
+            {
+                throw new ArgumentNullException(nameof(gameplayRoot));
+            }
+
+            EnsurePotionConsumptionPresentations(potions);
+
+            Transform previousCollisionRoot = gameplayRoot.Find(
+                CauldronCollisionRootName);
+            if (previousCollisionRoot != null)
+            {
+                UnityEngine.Object.DestroyImmediate(
+                    previousCollisionRoot.gameObject);
+            }
+
+            Transform previousIntake = gameplayRoot.Find(
+                CauldronIntakeProxyName);
+            if (previousIntake != null)
+            {
+                UnityEngine.Object.DestroyImmediate(
+                    previousIntake.gameObject);
+            }
+
+            CauldronController cauldron =
+                FindUniqueInScene<CauldronController>(scene);
+            Renderer visibleCauldron = cauldron
+                .GetComponentsInChildren<Renderer>(true)
+                .Where(renderer =>
+                    renderer != null &&
+                    renderer.enabled &&
+                    renderer.gameObject.activeInHierarchy &&
+                    !(renderer is ParticleSystemRenderer) &&
+                    !string.Equals(
+                        renderer.gameObject.name,
+                        "LiquidVisual",
+                        StringComparison.Ordinal))
+                .OrderByDescending(renderer =>
+                    renderer.bounds.size.sqrMagnitude)
+                .FirstOrDefault();
+            if (visibleCauldron == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not find the enabled visible cauldron renderer.");
+            }
+
+            Bounds bounds = visibleCauldron.bounds;
+            float width = bounds.size.x;
+            float depth = bounds.size.z;
+            float wallThickness = Mathf.Clamp(
+                Mathf.Min(width, depth) * 0.12f,
+                0.035f,
+                0.06f);
+            float wallHeight = bounds.size.y * 0.95f;
+            float wallCenterY = bounds.min.y + wallHeight * 0.5f;
+            float bottomThickness = Mathf.Min(
+                0.06f,
+                bounds.size.y * 0.2f);
+
+            var collisionRootObject = new GameObject(
+                CauldronCollisionRootName);
+            collisionRootObject.transform.SetParent(gameplayRoot, false);
+            collisionRootObject.transform.localPosition = Vector3.zero;
+            collisionRootObject.transform.localRotation = Quaternion.identity;
+            collisionRootObject.transform.localScale = Vector3.one;
+
+            BoxCollider[] shellColliders =
+            {
+                CreateStaticBoxCollider(
+                    collisionRootObject.transform,
+                    "CauldronWallLeft",
+                    new Vector3(
+                        bounds.min.x + wallThickness * 0.5f,
+                        wallCenterY,
+                        bounds.center.z),
+                    new Vector3(
+                        wallThickness,
+                        wallHeight,
+                        depth)),
+                CreateStaticBoxCollider(
+                    collisionRootObject.transform,
+                    "CauldronWallRight",
+                    new Vector3(
+                        bounds.max.x - wallThickness * 0.5f,
+                        wallCenterY,
+                        bounds.center.z),
+                    new Vector3(
+                        wallThickness,
+                        wallHeight,
+                        depth)),
+                CreateStaticBoxCollider(
+                    collisionRootObject.transform,
+                    "CauldronWallFront",
+                    new Vector3(
+                        bounds.center.x,
+                        wallCenterY,
+                        bounds.min.z + wallThickness * 0.5f),
+                    new Vector3(
+                        Mathf.Max(
+                            0.01f,
+                            width - wallThickness * 2f),
+                        wallHeight,
+                        wallThickness)),
+                CreateStaticBoxCollider(
+                    collisionRootObject.transform,
+                    "CauldronWallBack",
+                    new Vector3(
+                        bounds.center.x,
+                        wallCenterY,
+                        bounds.max.z - wallThickness * 0.5f),
+                    new Vector3(
+                        Mathf.Max(
+                            0.01f,
+                            width - wallThickness * 2f),
+                        wallHeight,
+                        wallThickness)),
+                CreateStaticBoxCollider(
+                    collisionRootObject.transform,
+                    "CauldronBottom",
+                    new Vector3(
+                        bounds.center.x,
+                        bounds.min.y + bottomThickness * 0.5f,
+                        bounds.center.z),
+                    new Vector3(
+                        Mathf.Max(
+                            0.01f,
+                            width - wallThickness * 2f),
+                        bottomThickness,
+                        Mathf.Max(
+                            0.01f,
+                            depth - wallThickness * 2f)))
+            };
+
+            var intakeObject = new GameObject(
+                CauldronIntakeProxyName);
+            intakeObject.transform.SetParent(gameplayRoot, false);
+            intakeObject.transform.position = new Vector3(
+                bounds.center.x,
+                bounds.max.y + 0.01f,
+                bounds.center.z);
+            intakeObject.transform.rotation = Quaternion.identity;
+            intakeObject.transform.localScale = Vector3.one;
+
+            BoxCollider intakeCollider =
+                intakeObject.AddComponent<BoxCollider>();
+            intakeCollider.isTrigger = true;
+            intakeCollider.center = Vector3.zero;
+            intakeCollider.size = new Vector3(
+                width * 0.62f,
+                Mathf.Max(0.14f, bounds.size.y * 0.42f),
+                depth * 0.62f);
+
+            CauldronIntakeProxy intakeProxy =
+                intakeObject.AddComponent<CauldronIntakeProxy>();
+            intakeProxy.Configure(
+                FindUniqueInScene<CauldronIntake>(scene));
+
+            XrTrackedSpaceCollisionGuard guard =
+                gameplayRoot.GetComponentInChildren<
+                    XrTrackedSpaceCollisionGuard>(true);
+            if (guard == null)
+            {
+                throw new InvalidOperationException(
+                    "The gameplay extension has no tracked-space " +
+                    "collision guard.");
+            }
+
+            Collider[] existingBlockers = guard.BlockingColliders ??
+                Array.Empty<Collider>();
+            Collider[] blockers = existingBlockers
+                .Where(collider => collider != null)
+                .Concat(shellColliders)
+                .Distinct()
+                .ToArray();
+            guard.Configure(
+                guard.RigRoot,
+                guard.Head,
+                blockers);
+
+            EditorSceneManager.MarkSceneDirty(scene);
         }
 
         private static PotionDefinition UpsertPotionDefinition(
@@ -862,6 +1060,52 @@ namespace WizzardsCauldron.EditorTools
             }
 
             return result;
+        }
+
+        private static void EnsurePotionConsumptionPresentations(
+            PotionController[] potions)
+        {
+            if (potions == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < potions.Length; index++)
+            {
+                PotionController potion = potions[index];
+                if (potion == null)
+                {
+                    continue;
+                }
+
+                Behaviour grabInteractable = potion
+                    .GetComponents<Behaviour>()
+                    .FirstOrDefault(component =>
+                        component != null &&
+                        string.Equals(
+                            component.GetType().Name,
+                            "XRGrabInteractable",
+                            StringComparison.Ordinal));
+                if (grabInteractable == null)
+                {
+                    throw new InvalidOperationException(
+                        GetHierarchyPath(potion.transform) +
+                        " has no XRGrabInteractable for consumption.");
+                }
+
+                PotionConsumptionPresentation presentation =
+                    potion.GetComponent<
+                        PotionConsumptionPresentation>();
+                if (presentation == null)
+                {
+                    presentation = potion.gameObject.AddComponent<
+                        PotionConsumptionPresentation>();
+                }
+                presentation.Configure(
+                    potion,
+                    grabInteractable);
+                EditorUtility.SetDirty(presentation);
+            }
         }
 
         private static BoxCollider CreateStaticBoxCollider(

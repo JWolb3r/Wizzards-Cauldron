@@ -152,6 +152,9 @@ namespace WizzardsCauldron.UI
                 case AttemptOutcome.ValidSolution:
                     return "Valid solution";
 
+                case AttemptOutcome.Overfilled:
+                    return "Cauldron overfilled";
+
                 case AttemptOutcome.OptimalSolution:
                     return "Optimal solution";
 

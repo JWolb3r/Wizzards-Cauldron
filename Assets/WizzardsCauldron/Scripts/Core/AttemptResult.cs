@@ -69,14 +69,6 @@ namespace WizzardsCauldron.Core
                     nameof(maximumCapacity));
             }
 
-            if (usedCapacity > maximumCapacity)
-            {
-                throw new ArgumentException(
-                    "Used capacity cannot exceed " +
-                    "maximum capacity.",
-                    nameof(usedCapacity));
-            }
-
             if (optimalSolution == null)
             {
                 throw new ArgumentNullException(
@@ -87,6 +79,8 @@ namespace WizzardsCauldron.Core
                 DetermineOutcome(
                     playerHealth,
                     usedCapacity,
+                    maximumCapacity,
+                    optimalSolution.UsedCapacity,
                     optimalSolution.MaximumHealth);
 
             return new AttemptResult(
@@ -101,6 +95,8 @@ namespace WizzardsCauldron.Core
         private static AttemptOutcome DetermineOutcome(
             int playerHealth,
             int usedCapacity,
+            int maximumCapacity,
+            int optimalUsedCapacity,
             int bestPossibleHealth)
         {
             if (usedCapacity == 0)
@@ -108,7 +104,13 @@ namespace WizzardsCauldron.Core
                 return AttemptOutcome.NoPotionsSelected;
             }
 
-            if (playerHealth == bestPossibleHealth)
+            if (usedCapacity > maximumCapacity)
+            {
+                return AttemptOutcome.Overfilled;
+            }
+
+            if (playerHealth == bestPossibleHealth &&
+                usedCapacity == optimalUsedCapacity)
             {
                 return AttemptOutcome.OptimalSolution;
             }

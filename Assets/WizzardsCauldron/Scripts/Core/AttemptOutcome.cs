@@ -4,6 +4,7 @@ namespace WizzardsCauldron.Core
     {
         NoPotionsSelected,
         ValidSolution,
-        OptimalSolution
+        OptimalSolution,
+        Overfilled
     }
 }
