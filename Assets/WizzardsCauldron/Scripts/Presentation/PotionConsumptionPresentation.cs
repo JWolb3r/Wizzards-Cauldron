@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using WizzardsCauldron.Core;
+using WizzardsCauldron.Interactions;
 
 namespace WizzardsCauldron.Presentation
 {
@@ -24,6 +25,7 @@ namespace WizzardsCauldron.Presentation
         private bool[] _rendererEnabledStates = Array.Empty<bool>();
         private bool[] _colliderEnabledStates = Array.Empty<bool>();
         private Rigidbody _rigidbody;
+        private PhysicsResettable _physicsResettable;
         private bool _initialGrabEnabled;
         private bool _initialIsKinematic;
         private bool _initialUseGravity;
@@ -111,6 +113,7 @@ namespace WizzardsCauldron.Presentation
         private void CaptureInitialState()
         {
             _rigidbody = GetComponent<Rigidbody>();
+            _physicsResettable = GetComponent<PhysicsResettable>();
             _renderers = GetComponentsInChildren<Renderer>(true);
             _colliders = GetComponentsInChildren<Collider>(true);
             _rendererEnabledStates = new bool[_renderers.Length];
@@ -159,7 +162,15 @@ namespace WizzardsCauldron.Presentation
 
             _isConsumed = true;
 
-            if (_grabInteractable != null)
+            if (_physicsResettable != null &&
+                _physicsResettable.ManagesInteraction(
+                    _grabInteractable))
+            {
+                // Remember the controller before disabling the interactable.
+                // It may still have select held when the room is reset.
+                _physicsResettable.SuspendInteraction();
+            }
+            else if (_grabInteractable != null)
             {
                 _grabInteractable.enabled = false;
             }
@@ -215,7 +226,19 @@ namespace WizzardsCauldron.Presentation
 
             if (_grabInteractable != null)
             {
-                _grabInteractable.enabled = _initialGrabEnabled;
+                if (_initialGrabEnabled &&
+                    _physicsResettable != null &&
+                    _physicsResettable.ManagesInteraction(
+                        _grabInteractable))
+                {
+                    _physicsResettable
+                        .ReenableInteractionAfterRelease();
+                }
+                else
+                {
+                    _grabInteractable.enabled =
+                        _initialGrabEnabled;
+                }
             }
 
             _isConsumed = false;

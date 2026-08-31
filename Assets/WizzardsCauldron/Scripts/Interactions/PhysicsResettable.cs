@@ -37,19 +37,16 @@ namespace WizzardsCauldron.Interactions
             _initialIsKinematic = _rigidbody.isKinematic;
         }
 
-        public void RestoreInitialPose()
+        internal bool ManagesInteraction(
+            Behaviour interactionBehaviour)
         {
-            object[] selectingInteractors =
-                CaptureSelectingInteractors();
-            if (selectingInteractors.Length > 0)
-            {
-                _selectingInteractors = selectingInteractors;
-            }
+            return interactionBehaviour != null &&
+                   _interactionBehaviour == interactionBehaviour;
+        }
 
-            bool interactionShouldBeEnabled =
-                _interactionBehaviour != null &&
-                (_interactionBehaviour.enabled ||
-                 _reenableInteractionRoutine != null);
+        internal void SuspendInteraction()
+        {
+            RememberSelectingInteractors();
 
             if (_reenableInteractionRoutine != null)
             {
@@ -57,10 +54,33 @@ namespace WizzardsCauldron.Interactions
                 _reenableInteractionRoutine = null;
             }
 
-            if (interactionShouldBeEnabled)
+            if (_interactionBehaviour != null)
             {
                 _interactionBehaviour.enabled = false;
             }
+        }
+
+        internal void ReenableInteractionAfterRelease()
+        {
+            if (_interactionBehaviour == null ||
+                _interactionBehaviour.enabled ||
+                _reenableInteractionRoutine != null)
+            {
+                return;
+            }
+
+            _reenableInteractionRoutine = StartCoroutine(
+                ReenableInteractionNextFrame());
+        }
+
+        public void RestoreInitialPose()
+        {
+            bool interactionShouldBeEnabled =
+                _interactionBehaviour != null &&
+                (_interactionBehaviour.enabled ||
+                 _reenableInteractionRoutine != null);
+
+            SuspendInteraction();
 
             _rigidbody.isKinematic = true;
 
@@ -88,8 +108,7 @@ namespace WizzardsCauldron.Interactions
                 // XR needs one complete frame with the grab component disabled
                 // so a held object is actually released before it becomes
                 // grabbable again at its restored start pose.
-                _reenableInteractionRoutine = StartCoroutine(
-                    ReenableInteractionNextFrame());
+                ReenableInteractionAfterRelease();
             }
         }
 
@@ -117,6 +136,16 @@ namespace WizzardsCauldron.Interactions
 
             _selectingInteractors = Array.Empty<object>();
             _reenableInteractionRoutine = null;
+        }
+
+        private void RememberSelectingInteractors()
+        {
+            object[] selectingInteractors =
+                CaptureSelectingInteractors();
+            if (selectingInteractors.Length > 0)
+            {
+                _selectingInteractors = selectingInteractors;
+            }
         }
 
         private object[] CaptureSelectingInteractors()

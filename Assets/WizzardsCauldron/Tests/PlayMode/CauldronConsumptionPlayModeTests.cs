@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,6 +9,7 @@ using UnityEngine.TestTools;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
 using WizzardsCauldron.Presentation;
+using Action = System.Action;
 
 namespace WizzardsCauldron.Tests.PlayMode
 {
@@ -189,7 +192,52 @@ namespace WizzardsCauldron.Tests.PlayMode
             Assert.That(result.Outcome, Is.EqualTo(AttemptOutcome.Overfilled));
             Assert.That(resultSfx.isPlaying, Is.True);
 
+            Vector3[] positionsWhenMadeAvailable =
+                new Vector3[potions.Length];
+            bool[] availabilityObserved =
+                new bool[potions.Length];
+            Action[] stateHandlers = new Action[potions.Length];
+
+            for (int index = 0; index < potions.Length; index++)
+            {
+                int potionIndex = index;
+                stateHandlers[index] = () =>
+                {
+                    if (potions[potionIndex].State !=
+                        PotionState.Available)
+                    {
+                        return;
+                    }
+
+                    availabilityObserved[potionIndex] = true;
+                    positionsWhenMadeAvailable[potionIndex] =
+                        potions[potionIndex].transform.position;
+                };
+                potions[index].StateChanged += stateHandlers[index];
+            }
+
             Assert.That(reset.TryResetRoom(), Is.True);
+
+            for (int index = 0; index < potions.Length; index++)
+            {
+                potions[index].StateChanged -= stateHandlers[index];
+
+                Assert.That(
+                    availabilityObserved[index],
+                    Is.True,
+                    potions[index].name +
+                    " did not become available during reset.");
+                float distance = Vector3.Distance(
+                    resetPositions[index],
+                    positionsWhenMadeAvailable[index]);
+                Assert.That(
+                    distance,
+                    Is.LessThan(0.02f),
+                    potions[index].name +
+                    " was made available before its start pose " +
+                    "was restored.");
+            }
+
             yield return null;
             Assert.That(resetSfx.isPlaying, Is.True);
 
@@ -235,6 +283,109 @@ namespace WizzardsCauldron.Tests.PlayMode
                     Is.LessThan(0.4f),
                     potions[index].name +
                     " moved abnormally after the room reset.");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ConsumedPotionWaitsForSelectRelease()
+        {
+            var potionObject = new GameObject(
+                "ConsumedPotionReleaseGateTest");
+            potionObject.SetActive(false);
+            potionObject.transform.position =
+                new Vector3(1f, 2f, 3f);
+
+            Rigidbody body = potionObject.AddComponent<Rigidbody>();
+            body.useGravity = false;
+            PotionController potion =
+                potionObject.AddComponent<PotionController>();
+            PhysicsResettable resettable =
+                potionObject.AddComponent<PhysicsResettable>();
+            FakeGrabInteractable grab =
+                potionObject.AddComponent<FakeGrabInteractable>();
+            PotionConsumptionPresentation presentation =
+                potionObject.AddComponent<
+                    PotionConsumptionPresentation>();
+
+            FieldInfo interactionField = typeof(PhysicsResettable)
+                .GetField(
+                    "_interactionBehaviour",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(interactionField, Is.Not.Null);
+            interactionField.SetValue(resettable, grab);
+            presentation.Configure(potion, grab);
+
+            potionObject.SetActive(true);
+            yield return null;
+
+            var interactor = new FakeSelectingInteractor
+            {
+                isSelectActive = true
+            };
+            grab.SetSelecting(interactor);
+
+            Vector3 initialPosition = potionObject.transform.position;
+            potionObject.transform.position =
+                initialPosition + Vector3.one * 5f;
+            body.position = potionObject.transform.position;
+            Physics.SyncTransforms();
+
+            potion.MarkUsed();
+            Assert.That(presentation.IsConsumed, Is.True);
+            Assert.That(grab.enabled, Is.False);
+            Assert.That(grab.interactorsSelecting, Is.Empty);
+
+            resettable.RestoreInitialPose();
+            potion.ResetState();
+
+            Assert.That(
+                Vector3.Distance(
+                    initialPosition,
+                    potionObject.transform.position),
+                Is.LessThan(0.001f));
+            Assert.That(
+                grab.enabled,
+                Is.False,
+                "The consumed potion became grabbable while its " +
+                "original controller still held select.");
+
+            yield return null;
+            Assert.That(grab.enabled, Is.False);
+
+            interactor.isSelectActive = false;
+            yield return null;
+
+            Assert.That(
+                grab.enabled,
+                Is.True,
+                "The potion did not become grabbable after select " +
+                "was released.");
+
+            Object.Destroy(potionObject);
+        }
+
+        private sealed class FakeSelectingInteractor
+        {
+            public bool isSelectActive { get; set; }
+        }
+
+        private sealed class FakeGrabInteractable : MonoBehaviour
+        {
+            private readonly List<object> _interactorsSelecting =
+                new List<object>();
+
+            public IReadOnlyList<object> interactorsSelecting =>
+                _interactorsSelecting;
+
+            public void SetSelecting(object interactor)
+            {
+                _interactorsSelecting.Clear();
+                _interactorsSelecting.Add(interactor);
+            }
+
+            private void OnDisable()
+            {
+                _interactorsSelecting.Clear();
             }
         }
     }

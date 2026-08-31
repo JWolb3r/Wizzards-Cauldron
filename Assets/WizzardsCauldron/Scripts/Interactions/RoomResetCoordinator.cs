@@ -37,19 +37,22 @@ namespace WizzardsCauldron.Interactions
 
             _cauldronIntake.ResetTracking();
 
-            for (int index = 0;
-                 index < _potions.Length;
-                 index++)
-            {
-                _potions[index].ResetState();
-            }
-
+            // Consumed potions have disabled colliders and interaction.
+            // Restore their poses while they are still inert so physics or
+            // XR cannot act on them at the cauldron before they reappear.
             for (int index = 0;
                  index < _physicsObjects.Length;
                  index++)
             {
                 _physicsObjects[index]
                     .RestoreInitialPose();
+            }
+
+            for (int index = 0;
+                 index < _potions.Length;
+                 index++)
+            {
+                _potions[index].ResetState();
             }
 
             if (!_gameSession.TryResetSession())
