@@ -127,6 +127,7 @@ namespace WizzardsCauldron.EditorTools
                 "WizzardsCauldron.Interactions.CauldronIntake",
                 "WizzardsCauldron.Interactions.PhysicsResettable",
                 "WizzardsCauldron.Interactions.PotionInspectionSource",
+                "WizzardsCauldron.Interactions.QuestFaceButtonBindings",
                 "WizzardsCauldron.Interactions.ResetHoldControl",
                 "WizzardsCauldron.Interactions.RoomResetCoordinator",
                 "WizzardsCauldron.Interactions.WandActivator",
@@ -468,6 +469,11 @@ namespace WizzardsCauldron.EditorTools
                 sceneComponents,
                 "PotionConsumptionPresentation",
                 ExpectedPotionCount,
+                report);
+            ValidateNamedComponentCount(
+                sceneComponents,
+                "QuestFaceButtonBindings",
+                1,
                 report);
 
             ValidateControllerCounts(sceneRoots, report);
@@ -1355,6 +1361,8 @@ namespace WizzardsCauldron.EditorTools
                     .SelectMany(root => root.GetComponentsInChildren<
                         PotionConsumptionPresentation>(true))
                     .ToArray();
+            QuestFaceButtonBindings[] questBindings = extensionRoot
+                .GetComponentsInChildren<QuestFaceButtonBindings>(true);
 
             if (extensionPotions.Length != ExpectedNewPotions.Length)
             {
@@ -1409,6 +1417,20 @@ namespace WizzardsCauldron.EditorTools
                         GetHierarchyPath(presentation.transform) +
                         " has incomplete potion-consumption references");
                 }
+            }
+
+            if (questBindings.Length != 1)
+            {
+                issues.Add(
+                    "expected exactly one Quest face-button binding " +
+                    "component, found " + questBindings.Length);
+            }
+            else if (!questBindings[0].TryGetConfigurationError(
+                out string questBindingError))
+            {
+                issues.Add(
+                    "Quest face-button binding is incomplete: " +
+                    questBindingError);
             }
 
             HashSet<string> extensionIds = new HashSet<string>(

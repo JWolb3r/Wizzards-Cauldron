@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using WizzardsCauldron.Core;
 using WizzardsCauldron.Interactions;
@@ -144,6 +145,8 @@ namespace WizzardsCauldron.EditorTools
             "CauldronSolidCollision";
         internal const string CauldronIntakeProxyName =
             "VisibleCauldronIntake";
+        internal const string QuestFaceButtonBindingsName =
+            "QuestFaceButtonBindings";
 
         private const string PotionDataFolder =
             "Assets/WizzardsCauldron/Data/Potions";
@@ -151,6 +154,9 @@ namespace WizzardsCauldron.EditorTools
             "Assets/WizzardsCauldron/Data/Puzzles";
         private const string PotionBottlePrefabPath =
             "Assets/WizzardsCauldron/Prefabs/PF_PotionBottle.prefab";
+        private const string DefaultInputActionsPath =
+            "Assets/Samples/XR Interaction Toolkit/3.4.1/Starter Assets/" +
+            "XRI Default Input Actions.inputactions";
 
         private static readonly PotionBuildSpec[] NewPotionSpecs =
         {
@@ -303,6 +309,8 @@ namespace WizzardsCauldron.EditorTools
                 Vector3.zero,
                 Quaternion.identity);
             gameplayRoot.transform.localScale = Vector3.one;
+
+            CreateQuestFaceButtonBindings(gameplayRoot.transform);
 
             var newPotions = new PotionController[
                 NewPotionSpecs.Length];
@@ -1158,6 +1166,40 @@ namespace WizzardsCauldron.EditorTools
             collider.enabled = true;
 
             return collider;
+        }
+
+        internal static void CreateQuestFaceButtonBindings(
+            Transform parent)
+        {
+            InputActionAsset inputActions =
+                AssetDatabase.LoadAssetAtPath<InputActionAsset>(
+                    DefaultInputActionsPath);
+            if (inputActions == null)
+            {
+                throw new InvalidOperationException(
+                    "The XRI Default Input Actions asset is missing at " +
+                    DefaultInputActionsPath + ".");
+            }
+
+            Transform existing = parent.Find(
+                QuestFaceButtonBindingsName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(
+                    existing.gameObject);
+            }
+
+            var controlsObject = new GameObject(
+                QuestFaceButtonBindingsName);
+            controlsObject.transform.SetParent(parent, false);
+            controlsObject.transform.localPosition = Vector3.zero;
+            controlsObject.transform.localRotation = Quaternion.identity;
+            controlsObject.transform.localScale = Vector3.one;
+
+            QuestFaceButtonBindings bindings =
+                controlsObject.AddComponent<QuestFaceButtonBindings>();
+            bindings.Configure(inputActions);
+            EditorUtility.SetDirty(bindings);
         }
 
         private static void CreateTrackedSpaceCollisionGuard(
