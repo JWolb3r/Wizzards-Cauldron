@@ -109,6 +109,7 @@ GameObject:
   - component: {fileID: 7670504659317848403}
   - component: {fileID: 8374882837482457375}
   - component: {fileID: 4743994237244617853}
+  - component: {fileID: 6641700067305862071}
   m_Layer: 0
   m_Name: PF_Wand
   m_TagString: Untagged
@@ -305,6 +306,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactionBehaviour: {fileID: 8374882837482457375}
+--- !u!114 &6641700067305862071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5807576029110184535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f77f9d8e1af40f78f237038de7cb22b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &7058031123480088677
 GameObject:
   m_ObjectHideFlags: 0
