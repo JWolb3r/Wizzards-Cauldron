@@ -555,13 +555,24 @@ namespace WizzardsCauldron.EditorTools
             }
 
             instructionText.text =
-                "Your challenge is to brew the strongest restorative mixture.\n\n" +
-                "1. Point at a potion to inspect its Health and Fill values.\n\n" +
-                "2. Pour your chosen potions into the cauldron.\n\n" +
-                "3. Stay within the cauldron's capacity. Each potion can only be used once.\n\n" +
-                "4. To submit and display your solution, touch the large glowing " +
-                "SUBMIT SOLUTION rune beside the cauldron with the wand tip.\n\n" +
-                "Touch the RESET rune with the wand tip to start over.";
+                "BREW THE STRONGEST RESTORATIVE MIXTURE\n\n" +
+                "1. Touch a difficulty plaque with the wand tip.\n" +
+                "2. Point at potions to inspect Health and Fill. Grab them with " +
+                "A/B (right) or X/Y (left), then drop them into the cauldron.\n" +
+                "3. Each bottle works once and disappears. Overfilling is allowed, " +
+                "but the mixture will fail.\n" +
+                "4. Touch the glowing SUBMIT SOLUTION rune with the wand tip to " +
+                "see your score.\n\n" +
+                "HINT: Hold the wand; press B (right) or Y (left).\n" +
+                "RESET: Touch the wall RESET rune with the wand tip.\n" +
+                "MOVE: Left stick walks; right stick turns.";
+
+            instructionText.fontSize = 28f;
+            instructionText.lineSpacing = 2f;
+            instructionText.rectTransform.anchoredPosition =
+                new Vector2(0f, -30f);
+            instructionText.rectTransform.sizeDelta =
+                new Vector2(-140f, -180f);
         }
 
         private static void AlignCauldronLiquid(

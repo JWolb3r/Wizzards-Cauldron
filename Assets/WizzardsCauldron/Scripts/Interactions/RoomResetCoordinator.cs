@@ -25,6 +25,23 @@ namespace WizzardsCauldron.Interactions
 
         public bool TryResetRoom()
         {
+            return TryResetRoomInternal(null);
+        }
+
+        public bool TryResetRoom(
+            PuzzleDefinition puzzleDefinition)
+        {
+            if (puzzleDefinition == null)
+            {
+                return false;
+            }
+
+            return TryResetRoomInternal(puzzleDefinition);
+        }
+
+        private bool TryResetRoomInternal(
+            PuzzleDefinition puzzleDefinition)
+        {
             if (!HasRequiredReferences())
             {
                 Debug.LogError(
@@ -55,7 +72,11 @@ namespace WizzardsCauldron.Interactions
                 _potions[index].ResetState();
             }
 
-            if (!_gameSession.TryResetSession())
+            bool sessionReady = puzzleDefinition != null
+                ? _gameSession.TryStartSession(puzzleDefinition)
+                : _gameSession.TryResetSession();
+
+            if (!sessionReady)
             {
                 Debug.LogError(
                     "The game session could not be reset.",

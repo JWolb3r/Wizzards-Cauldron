@@ -34,6 +34,9 @@ namespace WizzardsCauldron.Core
         public PuzzleSolution OptimalSolution =>
             _optimalSolution;
 
+        public PuzzleDefinition PuzzleDefinition =>
+            _puzzleDefinition;
+
         public AttemptResult LatestResult =>
             _latestResult;
 
@@ -90,44 +93,52 @@ namespace WizzardsCauldron.Core
             return true;
         }
 
-        private void InitializeSession()
+        public bool TryStartSession(
+            PuzzleDefinition puzzleDefinition)
         {
-            if (_puzzleDefinition == null)
+            if (!TryPreparePuzzle(
+                puzzleDefinition,
+                out PuzzleSolution solution))
             {
-                Debug.LogError(
-                    "GameSessionController has no " +
-                    "PuzzleDefinition.",
-                    this);
-
-                enabled = false;
-                return;
+                return false;
             }
 
+            _puzzleDefinition = puzzleDefinition;
+            _optimalSolution = solution;
+            _optimalHealth = solution.MaximumHealth;
+            _optimalUsedCapacity = solution.UsedCapacity;
+            _latestResult = null;
+            _state = GameSessionState.Playing;
+
+            _cauldron.Configure(puzzleDefinition);
+            SessionReset?.Invoke();
+            return true;
+        }
+
+        public bool TryEnterSelectionMode()
+        {
             if (_cauldron == null)
             {
-                Debug.LogError(
-                    "GameSessionController has no " +
-                    "CauldronController.",
-                    this);
-
-                enabled = false;
-                return;
+                return false;
             }
 
-            if (!_puzzleDefinition.TryValidate(
-                out string validationError))
+            _latestResult = null;
+            _state = GameSessionState.AwaitingSelection;
+            _cauldron.ResetCauldron();
+            _cauldron.Lock();
+            SessionReset?.Invoke();
+            return true;
+        }
+
+        private void InitializeSession()
+        {
+            if (!TryPreparePuzzle(
+                _puzzleDefinition,
+                out _optimalSolution))
             {
-                Debug.LogError(
-                    $"Cannot start invalid puzzle: " +
-                    $"{validationError}",
-                    this);
-
                 enabled = false;
                 return;
             }
-
-            _optimalSolution =
-                SolvePuzzle(_puzzleDefinition);
 
             _optimalHealth =
                 _optimalSolution.MaximumHealth;
@@ -139,6 +150,44 @@ namespace WizzardsCauldron.Core
             _state = GameSessionState.Playing;
 
             _cauldron.Configure(_puzzleDefinition);
+        }
+
+        private bool TryPreparePuzzle(
+            PuzzleDefinition puzzleDefinition,
+            out PuzzleSolution solution)
+        {
+            solution = null;
+
+            if (puzzleDefinition == null)
+            {
+                Debug.LogError(
+                    "GameSessionController has no " +
+                    "PuzzleDefinition.",
+                    this);
+                return false;
+            }
+
+            if (_cauldron == null)
+            {
+                Debug.LogError(
+                    "GameSessionController has no " +
+                    "CauldronController.",
+                    this);
+                return false;
+            }
+
+            if (!puzzleDefinition.TryValidate(
+                out string validationError))
+            {
+                Debug.LogError(
+                    $"Cannot start invalid puzzle: " +
+                    $"{validationError}",
+                    this);
+                return false;
+            }
+
+            solution = SolvePuzzle(puzzleDefinition);
+            return true;
         }
 
         private static PuzzleSolution SolvePuzzle(

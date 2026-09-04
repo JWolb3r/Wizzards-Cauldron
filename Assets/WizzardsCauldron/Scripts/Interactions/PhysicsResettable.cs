@@ -69,6 +69,16 @@ namespace WizzardsCauldron.Interactions
                 return;
             }
 
+            if (!isActiveAndEnabled)
+            {
+                // An unavailable campaign potion cannot still be held.
+                // Restore its grab component immediately so it is ready when
+                // a later round makes the potion visible again.
+                _interactionBehaviour.enabled = true;
+                _selectingInteractors = Array.Empty<object>();
+                return;
+            }
+
             _reenableInteractionRoutine = StartCoroutine(
                 ReenableInteractionNextFrame());
         }

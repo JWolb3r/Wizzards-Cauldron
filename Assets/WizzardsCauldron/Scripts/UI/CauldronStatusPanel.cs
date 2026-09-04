@@ -9,6 +9,8 @@ namespace WizzardsCauldron.UI
     {
         [SerializeField] private GameSessionController _gameSession;
 
+        [SerializeField] private QuestCampaignController _campaign;
+
         [Header("Gameplay Sources")]
         [SerializeField] private CauldronController _cauldron;
         [SerializeField] private CauldronIntake _intake;
@@ -20,6 +22,13 @@ namespace WizzardsCauldron.UI
 
         private void OnEnable()
         {
+            if (_campaign == null && Application.isPlaying)
+            {
+                _campaign = FindFirstObjectByType<
+                    QuestCampaignController>(
+                        FindObjectsInactive.Include);
+            }
+
             if (!HasRequiredReferences())
             {
                 Debug.LogError(
@@ -34,8 +43,18 @@ namespace WizzardsCauldron.UI
             _intake.PotionProcessed += HandlePotionProcessed;
             _gameSession.SessionReset += HandleSessionReset;
 
+            if (_campaign != null)
+            {
+                _campaign.RoundStarted += HandleRoundStarted;
+                _campaign.HintRevealed += HandleHintRevealed;
+                _campaign.HintUnavailable += HandleHintUnavailable;
+                _campaign.CampaignFinished += HandleCampaignFinished;
+                _campaign.DifficultySelectionRequested +=
+                    HandleDifficultySelectionRequested;
+            }
+
             RefreshTotals();
-            _messageText.text = "Add a potion";
+            SetMessage("Add a potion");
         }
 
         private void OnDisable()
@@ -52,6 +71,16 @@ namespace WizzardsCauldron.UI
             if (_gameSession != null)
             {
                 _gameSession.SessionReset -= HandleSessionReset;
+            }
+
+            if (_campaign != null)
+            {
+                _campaign.RoundStarted -= HandleRoundStarted;
+                _campaign.HintRevealed -= HandleHintRevealed;
+                _campaign.HintUnavailable -= HandleHintUnavailable;
+                _campaign.CampaignFinished -= HandleCampaignFinished;
+                _campaign.DifficultySelectionRequested -=
+                    HandleDifficultySelectionRequested;
             }
         }
 
@@ -81,36 +110,31 @@ namespace WizzardsCauldron.UI
             switch (result)
             {
                 case PotionAcceptanceResult.Accepted:
-                    _messageText.text =
+                    SetMessage(
                         _cauldron.UsedCapacity >
                         _cauldron.MaximumCapacity
                             ? $"{potionName} accepted - overfilled"
-                            : $"{potionName} accepted";
+                            : $"{potionName} accepted");
                     break;
 
                 case PotionAcceptanceResult.TooFull:
-                    _messageText.text =
-                        "Not enough capacity";
+                    SetMessage("Not enough capacity");
                     break;
 
                 case PotionAcceptanceResult.AlreadyUsed:
-                    _messageText.text =
-                        "Potion already used";
+                    SetMessage("Potion already used");
                     break;
 
                 case PotionAcceptanceResult.NotInPuzzle:
-                    _messageText.text =
-                        "Potion not part of this puzzle";
+                    SetMessage("Potion not part of this puzzle");
                     break;
 
                 case PotionAcceptanceResult.GameFinished:
-                    _messageText.text =
-                        "Attempt already finished";
+                    SetMessage("Attempt already finished");
                     break;
 
                 case PotionAcceptanceResult.InvalidPotion:
-                    _messageText.text =
-                        "Invalid potion";
+                    SetMessage("Invalid potion");
                     break;
             }
         }
@@ -118,7 +142,69 @@ namespace WizzardsCauldron.UI
         private void HandleSessionReset()
         {
             RefreshTotals();
-            _messageText.text = "Add a potion";
+            SetMessage("Add a potion");
+        }
+
+        private void HandleRoundStarted(
+            QuestRoundInfo _)
+        {
+            RefreshTotals();
+            SetMessage("Add potion | Wand + B/Y: Hint");
+        }
+
+        private void HandleHintRevealed(
+            PotionController potion)
+        {
+            SetMessage(
+                "Hint: " + GetPotionName(potion));
+        }
+
+        private void HandleHintUnavailable(
+            string message)
+        {
+            SetMessage(message);
+        }
+
+        private void HandleCampaignFinished(
+            QuestCampaignSummary summary)
+        {
+            SetMessage(
+                $"Campaign complete: {summary.TotalStars}/" +
+                $"{summary.MaximumStars} stars");
+        }
+
+        private void HandleDifficultySelectionRequested()
+        {
+            RefreshTotals();
+            SetMessage(
+                "Choose a difficulty with the wand");
+        }
+
+        public void ConfigureCampaign(
+            QuestCampaignController campaign)
+        {
+            _campaign = campaign;
+        }
+
+        private void SetMessage(string message)
+        {
+            if (_messageText == null)
+            {
+                return;
+            }
+
+            if (_campaign != null &&
+                _campaign.HasActiveRound)
+            {
+                _messageText.text =
+                    $"{_campaign.CurrentRoundNumber}/" +
+                    $"{_campaign.RoundCount} " +
+                    $"{_campaign.CurrentRoundTitle}\n" +
+                    message;
+                return;
+            }
+
+            _messageText.text = message;
         }
 
         private bool HasRequiredReferences()

@@ -31,23 +31,34 @@ namespace WizzardsCauldron.Tests.PlayMode
                 Object.FindFirstObjectByType<GameSessionController>();
             RoomResetCoordinator reset =
                 Object.FindFirstObjectByType<RoomResetCoordinator>();
+            QuestCampaignController campaign =
+                Object.FindFirstObjectByType<
+                    QuestCampaignController>();
             CauldronIntakeProxy intakeProxy =
                 Object.FindFirstObjectByType<CauldronIntakeProxy>();
-            PotionController[] potions = Object
+            PotionController[] allPotions = Object
                 .FindObjectsByType<PotionController>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None)
                 .OrderBy(potion => potion.Definition.StableId)
                 .ToArray();
-
             Assert.That(cauldron, Is.Not.Null);
             Assert.That(intake, Is.Not.Null);
             Assert.That(session, Is.Not.Null);
             Assert.That(reset, Is.Not.Null);
             Assert.That(intakeProxy, Is.Not.Null);
-            Assert.That(potions.Length, Is.EqualTo(7));
+            Assert.That(campaign, Is.Not.Null);
+            Assert.That(allPotions.Length, Is.EqualTo(7));
+            Assert.That(campaign.TrySelectRound(0), Is.True);
+            yield return null;
+
+            PotionController[] potions = allPotions
+                .Where(potion =>
+                    potion.gameObject.activeInHierarchy)
+                .ToArray();
+            Assert.That(potions.Length, Is.EqualTo(3));
             Assert.That(
-                potions.Any(potion =>
+                allPotions.Any(potion =>
                     string.Equals(
                         potion.Definition.StableId,
                         "red",

@@ -3,6 +3,7 @@ namespace WizzardsCauldron.Core
     public enum GameSessionState
     {
         Playing,
-        Finished
+        Finished,
+        AwaitingSelection
     }
 }

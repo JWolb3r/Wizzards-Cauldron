@@ -123,6 +123,7 @@ namespace WizzardsCauldron.EditorTools
             StyleWorldSpaceUi(references, assets);
             StyleFinishTarget(references);
             InteractionVisualPolisher.PolishLoadedScene(scene);
+            CampaignContentInstaller.InstallOrUpdate(scene);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log(
