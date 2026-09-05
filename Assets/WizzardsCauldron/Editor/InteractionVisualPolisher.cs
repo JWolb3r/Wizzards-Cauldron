@@ -848,7 +848,7 @@ namespace WizzardsCauldron.EditorTools
                 .FirstOrDefault();
             if (statusText != null)
             {
-                statusText.text = "Touch rune\nwith wand";
+                statusText.text = "Touch with wand to reset";
             }
 
             Behaviour legacyInteractable = resetRoot

@@ -11332,6 +11332,7 @@ GameObject:
   - component: {fileID: 185549734}
   - component: {fileID: 185549736}
   - component: {fileID: 185549735}
+  - component: {fileID: 185549737}
   m_Layer: 0
   m_Name: BlueCrystalPedestal
   m_TagString: Untagged
@@ -11407,6 +11408,27 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 185549733}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!65 &185549737
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 185549733}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.0000001, y: 1, z: 1.0000001}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &204922787
 GameObject:
   m_ObjectHideFlags: 0
@@ -18514,7 +18536,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0.116}
   m_SizeDelta: {x: 1000, y: 650}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &390079450
@@ -34675,7 +34697,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.02
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -34843,7 +34865,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.014
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -35164,7 +35186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.02
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -58168,7 +58190,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.025
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -58512,6 +58534,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1132312073}
   m_CullTransparentMesh: 1
+--- !u!1 &1134133821 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1051297185099623445, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
+  m_PrefabInstance: {fileID: 1640459792103163079}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1138017994
 GameObject:
   m_ObjectHideFlags: 0
@@ -86711,7 +86738,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.014
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -103285,7 +103312,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.007
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -109909,7 +109936,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.014
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1608609854114652779, guid: 7c99331eccc16ac4eac61d19a61f32c5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -110120,7 +110147,30 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "BREW THE STRONGEST RESTORATIVE MIXTURE\n\n1. Touch a difficulty plaque with the wand tip.\n2. Point at potions to inspect Health and Fill. Grab them with A/B (right) or X/Y (left), then drop them into the cauldron.\n3. Each bottle works once and disappears. Overfilling is allowed, but the mixture will fail.\n4. Touch the glowing SUBMIT SOLUTION rune with the wand tip to see your score.\n\nHINT: Hold the wand; press B (right) or Y (left).\nRESET: Touch the wall RESET rune with the wand tip.\nMOVE: Left stick walks; right stick turns."
+  m_text: 'BREW THE STRONGEST RESTORATIVE MIXTURE
+
+
+    1. Touch a difficulty plaque
+    with the wand tip.
+
+    2. Point at potions to inspect Health and Fill. Grab
+    them with A/B (right) or X/Y (left), then drop them into the cauldron.
+
+    3.
+    Each bottle works once and disappears. Overfilling the cauldron will lead to
+    failure.
+
+    4. Touch the glowing rune above the caulldron with the wand tip
+    to see your score.
+
+
+    HINT: Hold the wand; press B (right) or Y (left).
+
+    RESET:
+    Touch the wall RESET rune with the wand tip.
+
+    MOVE: Left stick walks; right
+    stick turns.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -110185,7 +110235,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: -54.636993, y: -84.02318, z: -69.8631, w: -33.559708}
+  m_margin: {x: -54.636993, y: -68.63307, z: -69.8631, w: -33.559708}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -112639,6 +112689,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3594074214126635036, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.0011322
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594074214126635036, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
       propertyPath: m_LocalRotation.w
       value: 0
       objectReference: {fileID: 0}
@@ -112742,6 +112796,10 @@ PrefabInstance:
       propertyPath: m_text
       value: Touch with wand to reset
       objectReference: {fileID: 0}
+    - target: {fileID: 8773353339680419098, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
+      propertyPath: m_margin.y
+      value: 0.0063171387
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 7581129341458163387, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
@@ -112752,7 +112810,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8206322073105394805, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1700063767}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1051297185099623445, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1640459792103163085}
   m_SourcePrefab: {fileID: 100100000, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
 --- !u!114 &1640459792103163080 stripped
 MonoBehaviour:
@@ -112770,7 +112831,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 869850697984476714, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
   m_PrefabInstance: {fileID: 1640459792103163079}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1134133821}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2ee887487659fc4d86d26a52c1d533b, type: 3}
@@ -112781,12 +112842,36 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8530643996163649241, guid: ed43c8382a8dd55408850238a9fc67c0, type: 3}
   m_PrefabInstance: {fileID: 1640459792103163079}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1134133821}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a35f6cfbfba9b548aaa00d52cfe8a50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1640459792103163085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134133821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdbb9ec42a5f468e9e791371ff76ac70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _roomReset: {fileID: 0}
+  _wandTrigger: {fileID: 0}
+  _legacyHoldControl: {fileID: 0}
+  _legacyInteractable: {fileID: 0}
+  _statusText: {fileID: 0}
+  _runeFacingRoot: {fileID: 0}
+  _pulseRoot: {fileID: 0}
+  _outerRune: {fileID: 0}
+  _innerRune: {fileID: 0}
+  _activationParticles: {fileID: 0}
+  _activationLight: {fileID: 0}
+  _activationDuration: 0.9
 --- !u!1001 &6713893023114770236
 PrefabInstance:
   m_ObjectHideFlags: 0
