@@ -256,7 +256,7 @@ namespace WizzardsCauldron.Interactions
         {
             if (_statusText != null)
             {
-                _statusText.text = "Touch rune\nwith wand";
+                _statusText.text = "Touch with wand to reset";
             }
         }
 
