@@ -18756,7 +18756,7 @@ MonoBehaviour:
   - {fileID: 1907869235}
   - {fileID: 1776597964}
   - {fileID: 616528059}
-  _selectionReturnDelay: 4
+  _selectionReturnDelay: 8
 --- !u!114 &421311762
 MonoBehaviour:
   m_ObjectHideFlags: 0

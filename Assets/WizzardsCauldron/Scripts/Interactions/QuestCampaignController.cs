@@ -112,7 +112,7 @@ namespace WizzardsCauldron.Interactions
 
         [Header("Selection return")]
         [SerializeField, Min(0.5f)]
-        private float _selectionReturnDelay = 4f;
+        private float _selectionReturnDelay = 8f;
 
         private int[] _roundStars = Array.Empty<int>();
         private bool[] _roundCompleted = Array.Empty<bool>();

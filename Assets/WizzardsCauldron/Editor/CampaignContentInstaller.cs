@@ -188,7 +188,7 @@ namespace WizzardsCauldron.EditorTools
                 new[] { apprentice, knight, master },
                 RoundTitles,
                 potions,
-                4f);
+                8f);
             hintFeedback.Configure(campaign);
             wandHintInput.Configure(
                 campaign,
